@@ -149,7 +149,7 @@ const SectionHeader = () => (
     
     <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold mb-4">
       <span className="bg-gradient-to-r from-gold via-gold-light to-gold bg-clip-text text-transparent">
-        تشكيلتنا الفاخرة
+        Our Collection
       </span>
     </h2>
     
