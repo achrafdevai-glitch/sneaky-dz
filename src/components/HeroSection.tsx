@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useNavigate } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, ChevronDown } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,6 @@ const HeroSection = () => {
       setClickCount(0);
     }
     
-    // Reset count after 500ms if not double-clicked
     setTimeout(() => setClickCount(0), 500);
   };
 
@@ -50,6 +49,10 @@ const HeroSection = () => {
     } else {
       setError("اسم المستخدم أو كلمة المرور غير صحيحة");
     }
+  };
+
+  const scrollToProducts = () => {
+    document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -66,80 +69,125 @@ const HeroSection = () => {
         <source src={heroVideo} type="video/mp4" />
       </video>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Gradient Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+      
+      {/* Animated Gold Particles Effect */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-gold animate-float" style={{ animationDelay: '0s' }} />
+        <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 rounded-full bg-gold-light animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-gold animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 right-1/4 w-1 h-1 rounded-full bg-gold-light animate-float" style={{ animationDelay: '0.5s' }} />
+      </div>
 
       {/* Theme Toggle */}
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
         onClick={toggleTheme}
-        className="absolute top-4 left-4 z-20 bg-background/80 backdrop-blur-sm"
+        className="absolute top-6 left-6 z-20 glass rounded-full w-12 h-12 hover:scale-110 transition-all duration-300 border border-gold/30"
       >
-        {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        {theme === "dark" ? (
+          <Sun className="h-5 w-5 text-gold" />
+        ) : (
+          <Moon className="h-5 w-5 text-gold" />
+        )}
       </Button>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-white">
-        {/* Floating Logo */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
+        {/* Floating Logo with Glow */}
         <div 
-          className="animate-float cursor-pointer"
+          className="animate-float cursor-pointer group"
           onClick={handleLogoClick}
         >
-          <img
-            src={logo}
-            alt="Fashion Store Logo"
-            className="w-32 h-32 md:w-40 md:h-40 object-contain rounded-full shadow-2xl bg-white p-2"
-          />
-        </div>
-
-        {/* Store Name */}
-        <h1 
-          className="mt-6 text-4xl md:text-6xl font-bold tracking-wider animate-float"
-          style={{ 
-            fontFamily: "'Playfair Display', serif",
-            animationDelay: "0.5s" 
-          }}
-        >
-          Fashion Store
-        </h1>
-
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-10 animate-bounce">
-          <div className="w-8 h-12 border-2 border-white rounded-full flex justify-center">
-            <div className="w-2 h-3 bg-white rounded-full mt-2 animate-pulse" />
+          <div className="relative">
+            {/* Glow Ring */}
+            <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-gold/20 via-gold-light/30 to-gold/20 blur-xl animate-glow" />
+            
+            {/* Logo Container */}
+            <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-2 border-gold/50 shadow-2xl group-hover:border-gold transition-all duration-500">
+              <img
+                src={logo}
+                alt="Fashion Store Logo"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
+            </div>
+            
+            {/* Decorative Ring */}
+            <div className="absolute -inset-2 rounded-full border border-gold/30 animate-pulse" />
           </div>
         </div>
+
+        {/* Store Name with Luxury Typography */}
+        <div className="mt-10 text-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-wide">
+            <span className="gradient-text drop-shadow-lg">Fashion Store</span>
+          </h1>
+          
+          {/* Decorative Line */}
+          <div className="mt-6 mx-auto w-40 md:w-56">
+            <div className="divider-gold" />
+          </div>
+          
+          {/* Tagline */}
+          <p className="mt-6 text-lg md:text-xl text-white/80 font-light tracking-widest uppercase">
+            أناقة تليق بك
+          </p>
+        </div>
+
+        {/* Scroll Indicator */}
+        <button 
+          onClick={scrollToProducts}
+          className="absolute bottom-10 flex flex-col items-center gap-2 text-white/70 hover:text-gold transition-colors duration-300 group"
+        >
+          <span className="text-sm tracking-wider uppercase">اكتشف المنتجات</span>
+          <div className="w-10 h-16 border-2 border-current rounded-full flex justify-center pt-2 group-hover:border-gold transition-colors">
+            <ChevronDown className="w-5 h-5 animate-bounce" />
+          </div>
+        </button>
       </div>
 
       {/* Login Dialog */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent className="sm:max-w-md" dir="rtl">
+        <DialogContent className="sm:max-w-md glass border-gold/20" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="text-center text-2xl">تسجيل الدخول</DialogTitle>
+            <DialogTitle className="text-center text-3xl font-serif gradient-text">
+              تسجيل الدخول
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-6 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="username">اسم المستخدم</Label>
+              <Label htmlFor="username" className="text-muted-foreground">اسم المستخدم</Label>
               <Input
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="أدخل اسم المستخدم"
+                className="h-12 border-gold/30 focus:border-gold bg-background/50"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
+              <Label htmlFor="password" className="text-muted-foreground">كلمة المرور</Label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كلمة المرور"
+                className="h-12 border-gold/30 focus:border-gold bg-background/50"
               />
             </div>
-            {error && <p className="text-destructive text-sm">{error}</p>}
-            <Button type="submit" className="w-full">
+            {error && (
+              <p className="text-destructive text-sm text-center bg-destructive/10 py-2 rounded-lg">
+                {error}
+              </p>
+            )}
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-lg btn-luxury rounded-xl font-medium"
+            >
               دخول
             </Button>
           </form>
