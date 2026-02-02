@@ -130,7 +130,7 @@ const HeroSection = () => {
           
           {/* Tagline */}
           <p className="mt-6 text-lg md:text-xl text-white/80 font-light tracking-widest uppercase">
-            أناقة تليق بك
+           Just For You
           </p>
         </div>
 
