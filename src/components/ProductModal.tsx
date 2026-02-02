@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag } from "lucide-react";
 import OrderForm from "./OrderForm";
 
 interface ProductModalProps {
@@ -37,180 +38,261 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
     ((product.old_price - product.new_price) / product.old_price) * 100
   );
 
+  const savings = product.old_price - product.new_price;
+
   return (
     <Dialog open={!!product} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto glass border-gold/20 p-0" dir="rtl">
-        {showOrderForm ? (
-          <div className="p-6">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-serif gradient-text text-center">
-                إتمام الطلب
-              </DialogTitle>
-            </DialogHeader>
-            <OrderForm
-              product={product}
-              onSuccess={() => {
-                setShowOrderForm(false);
-                onClose();
-              }}
-              onCancel={() => setShowOrderForm(false)}
-            />
-          </div>
-        ) : (
-          <>
-            {/* Image/Video Gallery */}
-            <div className="relative aspect-square bg-muted overflow-hidden">
-              {showVideo && hasVideo ? (
-                <div className="relative w-full h-full">
-                  <video
-                    src={product.video_url!}
-                    controls
-                    autoPlay
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-4 right-4 glass rounded-full w-10 h-10 hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => setShowVideo(false)}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {images.length > 0 ? (
-                    <img
-                      src={images[currentImageIndex]}
-                      alt={product.name}
-                      className="w-full h-full object-cover animate-fade-in"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <ShoppingBag className="w-20 h-20 text-muted-foreground/30" />
-                    </div>
-                  )}
-
-                  {/* Navigation Arrows */}
-                  {images.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 glass rounded-full w-10 h-10 hover:bg-gold hover:text-primary-foreground transition-colors"
-                        onClick={prevImage}
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 glass rounded-full w-10 h-10 hover:bg-gold hover:text-primary-foreground transition-colors"
-                        onClick={nextImage}
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </Button>
-                    </>
-                  )}
-
-                  {/* Video Button */}
-                  {hasVideo && (
-                    <Button
-                      size="sm"
-                      className="absolute bottom-4 left-4 btn-luxury rounded-full shadow-xl"
-                      onClick={() => setShowVideo(true)}
-                    >
-                      <Play className="h-4 w-4 ml-2" />
-                      شاهد الفيديو
-                    </Button>
-                  )}
-
-                  {/* Image Counter */}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-4 right-4 glass px-3 py-1.5 rounded-full text-sm">
-                      {currentImageIndex + 1} / {images.length}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Product Title */}
-              <DialogHeader>
-                <DialogTitle className="text-2xl md:text-3xl font-serif leading-tight">
-                  {product.name}
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-xl border-gold/20 p-0 rounded-3xl shadow-2xl" dir="rtl">
+        <AnimatePresence mode="wait">
+          {showOrderForm ? (
+            <motion.div
+              key="order-form"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              className="p-6"
+            >
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-2xl font-serif text-center">
+                  <span className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+                    إتمام الطلب
+                  </span>
                 </DialogTitle>
               </DialogHeader>
-
-              {/* Thumbnails */}
-              {(images.length > 1 || hasVideo) && (
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                  {images.map((image, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setCurrentImageIndex(index);
-                        setShowVideo(false);
-                      }}
-                      className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                        currentImageIndex === index && !showVideo
-                          ? "border-gold shadow-lg shadow-gold/20"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
+              <OrderForm
+                product={product}
+                onSuccess={() => {
+                  setShowOrderForm(false);
+                  onClose();
+                }}
+                onCancel={() => setShowOrderForm(false)}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="product-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* Image/Video Gallery */}
+              <div className="relative aspect-square bg-gradient-to-br from-secondary to-muted overflow-hidden rounded-t-3xl">
+                <AnimatePresence mode="wait">
+                  {showVideo && hasVideo ? (
+                    <motion.div
+                      key="video"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="relative w-full h-full"
                     >
-                      <img
-                        src={image}
-                        alt=""
+                      <video
+                        src={product.video_url!}
+                        controls
+                        autoPlay
                         className="w-full h-full object-cover"
                       />
-                    </button>
-                  ))}
-                  {hasVideo && (
-                    <button
-                      onClick={() => setShowVideo(true)}
-                      className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 flex items-center justify-center bg-muted ${
-                        showVideo
-                          ? "border-gold shadow-lg shadow-gold/20"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-4 right-4 bg-black/50 text-white rounded-full w-10 h-10 hover:bg-destructive"
+                        onClick={() => setShowVideo(false)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={`image-${currentImageIndex}`}
+                      initial={{ opacity: 0, scale: 1.1 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.4 }}
+                      className="w-full h-full"
                     >
-                      <Play className="h-6 w-6 text-gold" />
-                    </button>
+                      {images.length > 0 ? (
+                        <img
+                          src={images[currentImageIndex]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <ShoppingBag className="w-24 h-24 text-muted-foreground/20" />
+                        </div>
+                      )}
+                    </motion.div>
                   )}
-                </div>
-              )}
+                </AnimatePresence>
 
-              {/* Price Section */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
-                <span className="text-3xl font-bold text-gold">
-                  {product.new_price.toLocaleString()} د.ج
-                </span>
-                {product.old_price > product.new_price && (
+                {/* Navigation Arrows */}
+                {images.length > 1 && !showVideo && (
                   <>
-                    <span className="text-lg text-muted-foreground line-through decoration-destructive/50">
-                      {product.old_price.toLocaleString()} د.ج
-                    </span>
-                    <span className="flex items-center gap-1 bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground text-sm font-bold px-3 py-1 rounded-full">
-                      <Sparkles className="w-3 h-3" />
-                      -{discount}%
-                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-black/50 rounded-full w-12 h-12 shadow-xl hover:bg-white dark:hover:bg-black/70"
+                      onClick={prevImage}
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-black/50 rounded-full w-12 h-12 shadow-xl hover:bg-white dark:hover:bg-black/70"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
                   </>
+                )}
+
+                {/* Video Button */}
+                {hasVideo && !showVideo && (
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      size="sm"
+                      className="absolute bottom-4 left-4 bg-white/90 text-foreground hover:bg-white rounded-full shadow-xl"
+                      onClick={() => setShowVideo(true)}
+                    >
+                      <Play className="h-4 w-4 ml-2 text-gold" />
+                      شاهد الفيديو
+                    </Button>
+                  </motion.div>
+                )}
+
+                {/* Image Counter */}
+                {images.length > 1 && !showVideo && (
+                  <div className="absolute bottom-4 right-4 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                    {currentImageIndex + 1} / {images.length}
+                  </div>
+                )}
+
+                {/* Discount Badge */}
+                {discount > 0 && (
+                  <motion.div
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    className="absolute top-4 left-4 bg-destructive text-destructive-foreground px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg"
+                  >
+                    <TrendingDown className="w-4 h-4" />
+                    -{discount}%
+                  </motion.div>
                 )}
               </div>
 
-              {/* Order Button */}
-              <Button
-                size="lg"
-                className="w-full text-lg py-7 btn-luxury rounded-xl font-medium animate-pulse-gold"
-                onClick={() => setShowOrderForm(true)}
-              >
-                <ShoppingBag className="w-5 h-5 ml-2" />
-                اطلب الآن
-              </Button>
-            </div>
-          </>
-        )}
+              <div className="p-6 space-y-6">
+                {/* Product Title */}
+                <DialogHeader>
+                  <DialogTitle className="text-2xl md:text-3xl font-serif leading-tight">
+                    {product.name}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {/* Thumbnails */}
+                {(images.length > 1 || hasVideo) && (
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {images.map((image, index) => (
+                      <motion.button
+                        key={index}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setCurrentImageIndex(index);
+                          setShowVideo(false);
+                        }}
+                        className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                          currentImageIndex === index && !showVideo
+                            ? "border-gold shadow-lg shadow-gold/30"
+                            : "border-transparent opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={image}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.button>
+                    ))}
+                    {hasVideo && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setShowVideo(true)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all duration-300 flex items-center justify-center bg-secondary ${
+                          showVideo
+                            ? "border-gold shadow-lg shadow-gold/30"
+                            : "border-transparent opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <Play className="h-6 w-6 text-gold" />
+                      </motion.button>
+                    )}
+                  </div>
+                )}
+
+                {/* Premium Price Section */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-5 rounded-2xl bg-gradient-to-br from-secondary/80 to-muted/50 border border-gold/10"
+                >
+                  <div className="flex flex-wrap items-center gap-4">
+                    {/* New Price */}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+                        {product.new_price.toLocaleString()}
+                      </span>
+                      <span className="text-lg text-gold font-medium">د.ج</span>
+                    </div>
+                    
+                    {product.old_price > product.new_price && (
+                      <>
+                        {/* Old Price */}
+                        <span className="text-lg text-muted-foreground/50 line-through decoration-2">
+                          {product.old_price.toLocaleString()} د.ج
+                        </span>
+                        
+                        {/* Savings Badge */}
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 0.2, type: "spring" }}
+                          className="flex items-center gap-1.5 bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1.5 rounded-full text-sm font-medium"
+                        >
+                          <Tag className="w-3.5 h-3.5" />
+                          وفّر {savings.toLocaleString()} د.ج
+                        </motion.div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Order Button - Premium */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    size="lg"
+                    className="w-full text-lg py-7 rounded-2xl font-medium relative overflow-hidden group bg-gradient-to-r from-gold via-gold-light to-gold hover:from-primary hover:to-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-500"
+                    onClick={() => setShowOrderForm(true)}
+                  >
+                    {/* Shine effect */}
+                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                    
+                    <ShoppingBag className="w-6 h-6 ml-3 group-hover:rotate-12 transition-transform" />
+                    <span className="relative">اطلب الآن</span>
+                    <Sparkles className="w-5 h-5 mr-3 opacity-70" />
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );

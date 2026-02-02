@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useNavigate } from "react-router-dom";
-import { Moon, Sun, ChevronDown } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,9 +51,6 @@ const HeroSection = () => {
     }
   };
 
-  const scrollToProducts = () => {
-    document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section className="relative min-h-screen overflow-hidden">
@@ -137,16 +134,6 @@ const HeroSection = () => {
           </p>
         </div>
 
-        {/* Scroll Indicator */}
-        <button 
-          onClick={scrollToProducts}
-          className="absolute bottom-10 flex flex-col items-center gap-2 text-white/70 hover:text-gold transition-colors duration-300 group"
-        >
-          <span className="text-sm tracking-wider uppercase">اكتشف المنتجات</span>
-          <div className="w-10 h-16 border-2 border-current rounded-full flex justify-center pt-2 group-hover:border-gold transition-colors">
-            <ChevronDown className="w-5 h-5 animate-bounce" />
-          </div>
-        </button>
       </div>
 
       {/* Login Dialog */}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,11 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, Loader2, Home, Building2 } from "lucide-react";
+import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles } from "lucide-react";
 
 const orderSchema = z.object({
-  customerName: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل"),
-  phone: z.string().min(10, "رقم الهاتف غير صالح"),
+  customerName: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل").max(100, "الاسم طويل جداً"),
+  phone: z.string().min(10, "رقم الهاتف غير صالح").max(15, "رقم الهاتف غير صالح").regex(/^[0-9]+$/, "رقم الهاتف يجب أن يحتوي على أرقام فقط"),
   wilaya: z.string().min(1, "يرجى اختيار الولاية"),
   commune: z.string().min(1, "يرجى اختيار البلدية"),
   deliveryType: z.enum(["home", "office"]),
@@ -59,8 +60,8 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
       await createOrder.mutateAsync({
         product_id: product.id,
         product_name: product.name,
-        customer_name: data.customerName,
-        phone: data.phone,
+        customer_name: data.customerName.trim(),
+        phone: data.phone.trim(),
         wilaya: wilayas.find((w) => w.id === data.wilaya)?.name || data.wilaya,
         commune:
           selectedWilayaData?.communes.find((c) => c.id === data.commune)
@@ -73,100 +74,209 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         onSuccess();
       }, 3000);
     } catch (error) {
-      console.error("Order error:", error);
+      // Error handled by react-query
     }
   };
 
   if (isSuccess) {
     return (
-      <div className="text-center py-12 space-y-4">
-        <div className="mx-auto w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center animate-bounce">
-          <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
-        </div>
-        <h3 className="text-2xl font-bold text-green-600 dark:text-green-400">
-          تم استلام طلبك بنجاح!
-        </h3>
-        <p className="text-muted-foreground">
-          سنتواصل معك قريباً لتأكيد الطلب
-        </p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="text-center py-12 space-y-6"
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+          className="mx-auto w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-xl"
+        >
+          <CheckCircle className="w-14 h-14 text-white" />
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-2"
+        >
+          <h3 className="text-2xl font-serif font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">
+            تم استلام طلبك بنجاح!
+          </h3>
+          <p className="text-muted-foreground">
+            سنتواصل معك قريباً لتأكيد الطلب
+          </p>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="flex justify-center gap-2 text-gold"
+        >
+          <Sparkles className="w-5 h-5" />
+          <Sparkles className="w-5 h-5" />
+          <Sparkles className="w-5 h-5" />
+        </motion.div>
+      </motion.div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="customerName">الاسم واللقب</Label>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Customer Name */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="customerName" className="flex items-center gap-2 text-sm font-medium">
+          <User className="w-4 h-4 text-gold" />
+          الاسم واللقب
+        </Label>
         <Input
           id="customerName"
           placeholder="أدخل اسمك الكامل"
+          className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30"
           {...register("customerName")}
         />
-        {errors.customerName && (
-          <p className="text-destructive text-sm">{errors.customerName.message}</p>
-        )}
-      </div>
+        <AnimatePresence>
+          {errors.customerName && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="text-destructive text-sm"
+            >
+              {errors.customerName.message}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">رقم الهاتف</Label>
+      {/* Phone */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+          <Phone className="w-4 h-4 text-gold" />
+          رقم الهاتف
+        </Label>
         <Input
           id="phone"
           type="tel"
           placeholder="0XXX XXX XXX"
+          className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30"
           {...register("phone")}
         />
-        {errors.phone && (
-          <p className="text-destructive text-sm">{errors.phone.message}</p>
-        )}
-      </div>
+        <AnimatePresence>
+          {errors.phone && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="text-destructive text-sm"
+            >
+              {errors.phone.message}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-      <div className="space-y-2">
-        <Label>الولاية</Label>
+      {/* Wilaya */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+        className="space-y-2"
+      >
+        <Label className="flex items-center gap-2 text-sm font-medium">
+          <MapPin className="w-4 h-4 text-gold" />
+          الولاية
+        </Label>
         <Select
           onValueChange={(value) => {
             setValue("wilaya", value);
             setValue("commune", "");
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30">
             <SelectValue placeholder="اختر الولاية" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             {wilayas.map((wilaya) => (
-              <SelectItem key={wilaya.id} value={wilaya.id}>
+              <SelectItem key={wilaya.id} value={wilaya.id} className="rounded-lg">
                 {wilaya.name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {errors.wilaya && (
-          <p className="text-destructive text-sm">{errors.wilaya.message}</p>
-        )}
-      </div>
-
-      {selectedWilaya && selectedWilayaData && (
-        <div className="space-y-2">
-          <Label>البلدية</Label>
-          <Select onValueChange={(value) => setValue("commune", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر البلدية" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedWilayaData.communes.map((commune) => (
-                <SelectItem key={commune.id} value={commune.id}>
-                  {commune.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.commune && (
-            <p className="text-destructive text-sm">{errors.commune.message}</p>
+        <AnimatePresence>
+          {errors.wilaya && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="text-destructive text-sm"
+            >
+              {errors.wilaya.message}
+            </motion.p>
           )}
-        </div>
-      )}
+        </AnimatePresence>
+      </motion.div>
 
-      <div className="space-y-3">
-        <Label>نوع التوصيل</Label>
+      {/* Commune */}
+      <AnimatePresence>
+        {selectedWilaya && selectedWilayaData && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-2"
+          >
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <MapPin className="w-4 h-4 text-gold" />
+              البلدية
+            </Label>
+            <Select onValueChange={(value) => setValue("commune", value)}>
+              <SelectTrigger className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30">
+                <SelectValue placeholder="اختر البلدية" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl max-h-60">
+                {selectedWilayaData.communes.map((commune) => (
+                  <SelectItem key={commune.id} value={commune.id} className="rounded-lg">
+                    {commune.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <AnimatePresence>
+              {errors.commune && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-destructive text-sm"
+                >
+                  {errors.commune.message}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delivery Type */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+        className="space-y-3"
+      >
+        <Label className="text-sm font-medium">نوع التوصيل</Label>
         <RadioGroup
           defaultValue="home"
           onValueChange={(value) =>
@@ -182,9 +292,9 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
             />
             <Label
               htmlFor="home"
-              className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+              className="flex flex-col items-center justify-center rounded-xl border-2 border-border/50 bg-secondary/30 p-4 hover:bg-secondary/50 peer-data-[state=checked]:border-gold peer-data-[state=checked]:bg-gold/10 cursor-pointer transition-all"
             >
-              <Home className="mb-2 h-6 w-6" />
+              <Home className="mb-2 h-6 w-6 text-gold" />
               <span className="text-sm font-medium">إلى المنزل</span>
             </Label>
           </div>
@@ -196,48 +306,60 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
             />
             <Label
               htmlFor="office"
-              className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer"
+              className="flex flex-col items-center justify-center rounded-xl border-2 border-border/50 bg-secondary/30 p-4 hover:bg-secondary/50 peer-data-[state=checked]:border-gold peer-data-[state=checked]:bg-gold/10 cursor-pointer transition-all"
             >
-              <Building2 className="mb-2 h-6 w-6" />
+              <Building2 className="mb-2 h-6 w-6 text-gold" />
               <span className="text-sm font-medium">إلى المكتب</span>
             </Label>
           </div>
         </RadioGroup>
-      </div>
+      </motion.div>
 
-      <div className="border-t pt-4">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-lg">المجموع:</span>
-          <span className="text-2xl font-bold text-primary">
+      {/* Total */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="border-t border-border/50 pt-5"
+      >
+        <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-secondary/50 to-muted/30">
+          <span className="text-lg font-medium">المجموع:</span>
+          <span className="text-2xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
             {product.new_price.toLocaleString()} د.ج
           </span>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex gap-3">
+      {/* Buttons */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex gap-3 pt-2"
+      >
         <Button
           type="button"
           variant="outline"
-          className="flex-1"
+          className="flex-1 h-12 rounded-xl border-border/50"
           onClick={onCancel}
         >
           إلغاء
         </Button>
         <Button
           type="submit"
-          className="flex-1"
+          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-gold to-gold-light hover:from-primary hover:to-primary text-primary-foreground font-medium shadow-lg"
           disabled={createOrder.isPending}
         >
           {createOrder.isPending ? (
             <>
-              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+              <Loader2 className="w-5 h-5 ml-2 animate-spin" />
               جاري الإرسال...
             </>
           ) : (
             "تأكيد الطلب"
           )}
         </Button>
-      </div>
+      </motion.div>
     </form>
   );
 };
