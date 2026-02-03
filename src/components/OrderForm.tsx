@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Product } from "@/hooks/useProducts";
 import { useCreateOrder } from "@/hooks/useOrders";
-import { wilayas } from "@/data/wilayas";
+import { useDeliveryPrices, getDeliveryPrice } from "@/hooks/useDeliveryPrices";
+import { wilayas, algiersCommunes } from "@/data/wilayas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles } from "lucide-react";
+import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles, Truck, Palette, Ruler } from "lucide-react";
 
 const orderSchema = z.object({
   customerName: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل").max(100, "الاسم طويل جداً"),
@@ -25,6 +26,10 @@ const orderSchema = z.object({
   wilaya: z.string().min(1, "يرجى اختيار الولاية"),
   commune: z.string().min(1, "يرجى اختيار البلدية"),
   deliveryType: z.enum(["home", "office"]),
+  addressDetail: z.string().optional(),
+  selectedSize: z.string().optional(),
+  selectedColor: z.string().optional(),
+  selectedShoeSize: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
@@ -38,6 +43,8 @@ interface OrderFormProps {
 const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const createOrder = useCreateOrder();
+  const { data: deliveryPrices } = useDeliveryPrices();
+  const [deliveryPrice, setDeliveryPrice] = useState(0);
 
   const {
     register,
@@ -53,7 +60,19 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
   });
 
   const selectedWilaya = watch("wilaya");
+  const selectedDeliveryType = watch("deliveryType");
   const selectedWilayaData = wilayas.find((w) => w.id === selectedWilaya);
+  const selectedWilayaName = selectedWilayaData?.name || "";
+  
+  // Check if it's Algiers and home delivery
+  const isAlgiersHomeDelivery = selectedWilayaName === "الجزائر" && selectedDeliveryType === "home";
+
+  useEffect(() => {
+    if (selectedWilayaName && selectedDeliveryType && deliveryPrices) {
+      const price = getDeliveryPrice(deliveryPrices, selectedWilayaName, selectedDeliveryType as "home" | "office");
+      setDeliveryPrice(price);
+    }
+  }, [selectedWilayaName, selectedDeliveryType, deliveryPrices]);
 
   const onSubmit = async (data: OrderFormData) => {
     try {
@@ -63,11 +82,14 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         customer_name: data.customerName.trim(),
         phone: data.phone.trim(),
         wilaya: wilayas.find((w) => w.id === data.wilaya)?.name || data.wilaya,
-        commune:
-          selectedWilayaData?.communes.find((c) => c.id === data.commune)
-            ?.name || data.commune,
+        commune: selectedWilayaData?.communes.find((c) => c.id === data.commune)?.name || data.commune,
         delivery_type: data.deliveryType,
-        total_price: product.new_price,
+        delivery_price: deliveryPrice,
+        total_price: product.new_price + deliveryPrice,
+        selected_size: data.selectedSize || null,
+        selected_color: data.selectedColor || null,
+        selected_shoe_size: data.selectedShoeSize || null,
+        address_detail: data.addressDetail || null,
       });
       setIsSuccess(true);
       setTimeout(() => {
@@ -186,6 +208,98 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         </AnimatePresence>
       </motion.div>
 
+      {/* Size Selection */}
+      {product.sizes && product.sizes.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.15 }}
+          className="space-y-2"
+        >
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <Ruler className="w-4 h-4 text-gold" />
+            المقاس
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {product.sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => setValue("selectedSize", size)}
+                className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                  watch("selectedSize") === size
+                    ? "bg-gold text-black border-gold"
+                    : "border-border hover:border-gold/50"
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Shoe Size Selection */}
+      {product.shoe_sizes && product.shoe_sizes.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.15 }}
+          className="space-y-2"
+        >
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <Ruler className="w-4 h-4 text-gold" />
+            مقاس الحذاء
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {product.shoe_sizes.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => setValue("selectedShoeSize", size)}
+                className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                  watch("selectedShoeSize") === size
+                    ? "bg-gold text-black border-gold"
+                    : "border-border hover:border-gold/50"
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Color Selection */}
+      {product.colors && product.colors.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.15 }}
+          className="space-y-2"
+        >
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <Palette className="w-4 h-4 text-gold" />
+            اللون
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {product.colors.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setValue("selectedColor", color)}
+                className={`w-10 h-10 rounded-full border-2 transition-all ${
+                  watch("selectedColor") === color
+                    ? "border-gold ring-2 ring-gold ring-offset-2 ring-offset-background"
+                    : "border-border hover:border-gold/50"
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Wilaya */}
       <motion.div 
         initial={{ opacity: 0, x: -20 }}
@@ -201,12 +315,13 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
           onValueChange={(value) => {
             setValue("wilaya", value);
             setValue("commune", "");
+            setValue("addressDetail", "");
           }}
         >
           <SelectTrigger className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30">
             <SelectValue placeholder="اختر الولاية" />
           </SelectTrigger>
-          <SelectContent className="rounded-xl">
+          <SelectContent className="rounded-xl max-h-60">
             {wilayas.map((wilaya) => (
               <SelectItem key={wilaya.id} value={wilaya.id} className="rounded-lg">
                 {wilaya.name}
@@ -315,17 +430,57 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         </RadioGroup>
       </motion.div>
 
-      {/* Total */}
+      {/* Address Detail for Algiers Home Delivery */}
+      <AnimatePresence>
+        {isAlgiersHomeDelivery && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-2"
+          >
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Truck className="w-4 h-4 text-gold" />
+              البلدية للتوصيل المنزلي
+            </Label>
+            <Select onValueChange={(value) => setValue("addressDetail", value)}>
+              <SelectTrigger className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30">
+                <SelectValue placeholder="اختر البلدية للتوصيل" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl max-h-60">
+                {algiersCommunes.map((commune) => (
+                  <SelectItem key={commune} value={commune} className="rounded-lg">
+                    {commune}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Price Summary */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="border-t border-border/50 pt-5"
+        className="border-t border-border/50 pt-5 space-y-3"
       >
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground">سعر المنتج:</span>
+          <span className="font-medium">{product.new_price.toLocaleString()} د.ج</span>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-muted-foreground flex items-center gap-1">
+            <Truck className="w-4 h-4" />
+            سعر التوصيل:
+          </span>
+          <span className="font-medium">{deliveryPrice.toLocaleString()} د.ج</span>
+        </div>
         <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-secondary/50 to-muted/30">
           <span className="text-lg font-medium">المجموع:</span>
           <span className="text-2xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
-            {product.new_price.toLocaleString()} د.ج
+            {(product.new_price + deliveryPrice).toLocaleString()} د.ج
           </span>
         </div>
       </motion.div>

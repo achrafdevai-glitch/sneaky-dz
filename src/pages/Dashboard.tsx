@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Home,
+  Layers,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -27,6 +28,7 @@ const Dashboard = () => {
   const menuItems = [
     { path: "/dashboard/orders", icon: ShoppingCart, label: "الطلبات" },
     { path: "/dashboard/products", icon: Package, label: "المنتجات" },
+    { path: "/dashboard/categories", icon: Layers, label: "الأصناف" },
     { path: "/dashboard/stats", icon: BarChart3, label: "الإحصائيات" },
     { path: "/dashboard/settings", icon: Settings, label: "الإعدادات" },
   ];
@@ -39,7 +41,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-card border-b">
+      <header className="sticky top-0 z-50 bg-card border-b border-border/50 backdrop-blur-lg">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-bold">لوحة التحكم</h1>
           <div className="flex gap-2">
@@ -56,17 +58,17 @@ const Dashboard = () => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-57px)] bg-card border-l hidden md:block">
+        {/* Sidebar - Desktop */}
+        <aside className="w-64 min-h-[calc(100vh-57px)] bg-card border-l border-border/50 hidden md:block">
           <nav className="p-4 space-y-2">
             {menuItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                   location.pathname === item.path
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent"
+                    ? "bg-white text-black"
+                    : "hover:bg-secondary"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
@@ -77,27 +79,27 @@ const Dashboard = () => {
         </aside>
 
         {/* Mobile Bottom Nav */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-card border-t md:hidden z-50">
+        <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border/50 md:hidden z-50 safe-area-bottom">
           <div className="flex justify-around py-2">
             {menuItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg ${
+                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
                   location.pathname === item.path
-                    ? "text-primary"
+                    ? "text-white bg-white/10"
                     : "text-muted-foreground"
                 }`}
               >
                 <item.icon className="h-5 w-5" />
-                <span className="text-xs">{item.label}</span>
+                <span className="text-[10px]">{item.label}</span>
               </Link>
             ))}
           </div>
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
+        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">
           <Outlet />
         </main>
       </div>

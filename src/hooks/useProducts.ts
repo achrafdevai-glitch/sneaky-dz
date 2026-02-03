@@ -8,6 +8,10 @@ export interface Product {
   new_price: number;
   images: string[];
   video_url: string | null;
+  category_id: string | null;
+  sizes: string[];
+  colors: string[];
+  shoe_sizes: string[];
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +28,28 @@ export const useProducts = () => {
       if (error) throw error;
       return data as Product[];
     },
+  });
+};
+
+export const useProductsByCategory = (categoryId: string | null) => {
+  return useQuery({
+    queryKey: ["products", "category", categoryId],
+    queryFn: async () => {
+      let query = supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as Product[];
+    },
+    enabled: categoryId !== undefined,
   });
 };
 

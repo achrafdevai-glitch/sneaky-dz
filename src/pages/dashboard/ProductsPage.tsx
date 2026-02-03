@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useProducts,
   useCreateProduct,
@@ -6,10 +7,12 @@ import {
   useDeleteProduct,
   Product,
 } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/useCategories";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -18,19 +21,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Upload, X, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette } from "lucide-react";
 import { toast } from "sonner";
+
+const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
+const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
 
 const ProductsPage = () => {
   const { data: products, isLoading } = useProducts();
+  const { data: categories } = useCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -38,6 +44,7 @@ const ProductsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [colorInput, setColorInput] = useState("#000000");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,6 +52,10 @@ const ProductsPage = () => {
     new_price: "",
     images: [] as string[],
     video_url: "",
+    category_id: null as string | null,
+    sizes: [] as string[],
+    colors: [] as string[],
+    shoe_sizes: [] as string[],
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -57,8 +68,13 @@ const ProductsPage = () => {
       new_price: "",
       images: [],
       video_url: "",
+      category_id: null,
+      sizes: [],
+      colors: [],
+      shoe_sizes: [],
     });
     setEditingProduct(null);
+    setColorInput("#000000");
   };
 
   const openEditDialog = (product: Product) => {
@@ -69,6 +85,10 @@ const ProductsPage = () => {
       new_price: product.new_price.toString(),
       images: product.images || [],
       video_url: product.video_url || "",
+      category_id: product.category_id,
+      sizes: product.sizes || [],
+      colors: product.colors || [],
+      shoe_sizes: product.shoe_sizes || [],
     });
     setIsDialogOpen(true);
   };
@@ -138,6 +158,40 @@ const ProductsPage = () => {
     }));
   };
 
+  const toggleSize = (size: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      sizes: prev.sizes.includes(size)
+        ? prev.sizes.filter((s) => s !== size)
+        : [...prev.sizes, size],
+    }));
+  };
+
+  const toggleShoeSize = (size: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      shoe_sizes: prev.shoe_sizes.includes(size)
+        ? prev.shoe_sizes.filter((s) => s !== size)
+        : [...prev.shoe_sizes, size],
+    }));
+  };
+
+  const addColor = () => {
+    if (colorInput && !formData.colors.includes(colorInput)) {
+      setFormData((prev) => ({
+        ...prev,
+        colors: [...prev.colors, colorInput],
+      }));
+    }
+  };
+
+  const removeColor = (color: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((c) => c !== color),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -147,6 +201,10 @@ const ProductsPage = () => {
       new_price: parseFloat(formData.new_price),
       images: formData.images,
       video_url: formData.video_url || null,
+      category_id: formData.category_id,
+      sizes: formData.sizes,
+      colors: formData.colors,
+      shoe_sizes: formData.shoe_sizes,
     };
 
     try {
@@ -183,9 +241,9 @@ const ProductsPage = () => {
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">المنتجات</h2>
         </div>
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full rounded-xl" />
           ))}
         </div>
       </div>
@@ -204,7 +262,7 @@ const ProductsPage = () => {
           }}
         >
           <DialogTrigger asChild>
-            <Button>
+            <Button className="bg-gold hover:bg-gold/90 text-black">
               <Plus className="h-4 w-4 ml-2" />
               إضافة منتج
             </Button>
@@ -226,6 +284,31 @@ const ProductsPage = () => {
                   }
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>الصنف</Label>
+                <Select
+                  value={formData.category_id || "none"}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      category_id: value === "none" ? null : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الصنف" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون صنف</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -259,6 +342,87 @@ const ProductsPage = () => {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Clothing Sizes */}
+              <div className="space-y-2">
+                <Label>مقاسات الملابس</Label>
+                <div className="flex flex-wrap gap-2">
+                  {CLOTHING_SIZES.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleSize(size)}
+                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                        formData.sizes.includes(size)
+                          ? "bg-gold text-black border-gold"
+                          : "border-border hover:border-gold/50"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shoe Sizes */}
+              <div className="space-y-2">
+                <Label>مقاسات الأحذية</Label>
+                <div className="flex flex-wrap gap-2">
+                  {SHOE_SIZES.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => toggleShoeSize(size)}
+                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                        formData.shoe_sizes.includes(size)
+                          ? "bg-gold text-black border-gold"
+                          : "border-border hover:border-gold/50"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div className="space-y-2">
+                <Label>الألوان</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={colorInput}
+                    onChange={(e) => setColorInput(e.target.value)}
+                    className="w-12 h-10 rounded cursor-pointer"
+                  />
+                  <Button type="button" variant="outline" onClick={addColor}>
+                    <Palette className="h-4 w-4 ml-2" />
+                    إضافة لون
+                  </Button>
+                </div>
+                {formData.colors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.colors.map((color, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary"
+                      >
+                        <div
+                          className="w-5 h-5 rounded-full border"
+                          style={{ backgroundColor: color }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeColor(color)}
+                          className="text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -348,7 +512,7 @@ const ProductsPage = () => {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isUploading}>
+              <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-black" disabled={isUploading}>
                 {editingProduct ? "تحديث" : "إضافة"}
               </Button>
             </form>
@@ -357,64 +521,84 @@ const ProductsPage = () => {
       </div>
 
       {!products || products.length === 0 ? (
-        <div className="text-center py-12">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
           <p className="text-muted-foreground text-lg">لا توجد منتجات بعد</p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="rounded-lg border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>الصورة</TableHead>
-                <TableHead>الاسم</TableHead>
-                <TableHead>السعر القديم</TableHead>
-                <TableHead>السعر الجديد</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    {product.images && product.images.length > 0 ? (
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-muted rounded" />
-                    )}
-                  </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="text-muted-foreground line-through">
-                    {product.old_price.toLocaleString()} د.ج
-                  </TableCell>
-                  <TableCell className="font-bold">
-                    {product.new_price.toLocaleString()} د.ج
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEditDialog(product)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(product.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AnimatePresence>
+            {products.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-card rounded-xl overflow-hidden border border-border/50 hover:border-gold/30 transition-all group"
+              >
+                <div className="aspect-square relative overflow-hidden">
+                  {product.images && product.images.length > 0 ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <span className="text-muted-foreground">لا توجد صورة</span>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  )}
+                </div>
+                <div className="p-4 space-y-3">
+                  <h3 className="font-semibold truncate">{product.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground line-through text-sm">
+                      {product.old_price.toLocaleString()} د.ج
+                    </span>
+                    <span className="font-bold text-gold">
+                      {product.new_price.toLocaleString()} د.ج
+                    </span>
+                  </div>
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="flex gap-1">
+                      {product.colors.slice(0, 4).map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-4 h-4 rounded-full border"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                      {product.colors.length > 4 && (
+                        <span className="text-xs text-muted-foreground">+{product.colors.length - 4}</span>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => openEditDialog(product)}
+                    >
+                      <Pencil className="h-4 w-4 ml-2" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(product.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
