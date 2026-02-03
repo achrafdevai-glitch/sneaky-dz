@@ -9,8 +9,13 @@ export interface Order {
   phone: string;
   wilaya: string;
   commune: string;
-  delivery_type: "home" | "office";
+  delivery_type: string;
+  delivery_price: number;
   total_price: number;
+  selected_size: string | null;
+  selected_color: string | null;
+  selected_shoe_size: string | null;
+  address_detail: string | null;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -35,7 +40,7 @@ export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (order: Omit<Order, "id" | "created_at" | "updated_at" | "status">) => {
+    mutationFn: async (order: Omit<Order, "id" | "status" | "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("orders")
         .insert({ ...order, status: "pending" })

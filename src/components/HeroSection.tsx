@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useSettings } from "@/hooks/useSettings";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useNavigate } from "react-router-dom";
@@ -13,13 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.png";
 
 const HeroSection = () => {
   const { data: settings } = useSettings();
   const { login } = useAdmin();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   const [clickCount, setClickCount] = useState(0);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -28,6 +30,20 @@ const HeroSection = () => {
   const [error, setError] = useState("");
 
   const heroVideo = settings?.hero_video || "/videos/hero-video.mp4";
+
+  // Smooth video transition when source changes
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.style.opacity = '0';
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.load();
+          videoRef.current.play();
+          videoRef.current.style.opacity = '1';
+        }
+      }, 300);
+    }
+  }, [heroVideo]);
 
   const handleLogoClick = () => {
     const newCount = clickCount + 1;
@@ -54,28 +70,40 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen overflow-hidden">
-      {/* Video Background */}
+      {/* Video Background with smooth transition */}
       <video
+        ref={videoRef}
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
         style={{ pointerEvents: "none" }}
       >
         <source src={heroVideo} type="video/mp4" />
       </video>
 
       {/* Gradient Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
       
-      {/* Animated Gold Particles Effect */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-gold animate-float" style={{ animationDelay: '0s' }} />
-        <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 rounded-full bg-gold-light animate-float" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-gold animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 right-1/4 w-1 h-1 rounded-full bg-gold-light animate-float" style={{ animationDelay: '0.5s' }} />
+      {/* Animated Particles Effect */}
+      <div className="absolute inset-0 opacity-40">
+        <motion.div 
+          animate={{ y: [-20, 20], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-white"
+        />
+        <motion.div 
+          animate={{ y: [20, -20], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          className="absolute top-1/3 right-1/3 w-1.5 h-1.5 rounded-full bg-white"
+        />
+        <motion.div 
+          animate={{ y: [-15, 15], opacity: [0.4, 0.9, 0.4] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute bottom-1/3 left-1/3 w-2 h-2 rounded-full bg-white"
+        />
       </div>
 
       {/* Theme Toggle */}
@@ -83,64 +111,62 @@ const HeroSection = () => {
         variant="ghost"
         size="icon"
         onClick={toggleTheme}
-        className="absolute top-6 left-6 z-20 glass rounded-full w-12 h-12 hover:scale-110 transition-all duration-300 border border-gold/30"
+        className="absolute top-6 left-6 z-20 glass rounded-full w-12 h-12 hover:scale-110 transition-all duration-300 border border-white/30"
       >
         {theme === "dark" ? (
-          <Sun className="h-5 w-5 text-gold" />
+          <Sun className="h-5 w-5 text-white" />
         ) : (
-          <Moon className="h-5 w-5 text-gold" />
+          <Moon className="h-5 w-5 text-white" />
         )}
       </Button>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-        {/* Floating Logo with Glow */}
-        <div 
-          className="animate-float cursor-pointer group"
+        {/* Floating Logo */}
+        <motion.div 
+          className="cursor-pointer group"
           onClick={handleLogoClick}
+          animate={{ y: [-5, 5, -5] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
           <div className="relative">
-            {/* Glow Ring */}
-            <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-gold/20 via-gold-light/30 to-gold/20 blur-xl animate-glow" />
+            {/* Glow Effect */}
+            <div className="absolute -inset-6 rounded-3xl bg-white/10 blur-2xl" />
             
             {/* Logo Container */}
-            <div className="relative w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-2 border-gold/50 shadow-2xl group-hover:border-gold transition-all duration-500">
+            <div className="relative w-56 h-24 md:w-72 md:h-32 lg:w-80 lg:h-36 overflow-hidden group-hover:scale-105 transition-transform duration-700">
               <img
                 src={logo}
-                alt="Fashion Store Logo"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                alt="Sneaky Shop Logo"
+                className="w-full h-full object-contain drop-shadow-2xl"
               />
             </div>
-            
-            {/* Decorative Ring */}
-            <div className="absolute -inset-2 rounded-full border border-gold/30 animate-pulse" />
           </div>
-        </div>
+        </motion.div>
 
-        {/* Store Name with Luxury Typography */}
-        <div className="mt-10 text-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold tracking-wide">
-            <span className="gradient-text drop-shadow-lg">Fashion Store</span>
-          </h1>
+        {/* Tagline */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 text-center"
+        >
+          <p className="text-xl md:text-2xl text-white/80 font-light tracking-[0.3em] uppercase">
+            Dress Than Differently
+          </p>
           
           {/* Decorative Line */}
           <div className="mt-6 mx-auto w-40 md:w-56">
-            <div className="divider-gold" />
+            <div className="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           </div>
-          
-          {/* Tagline */}
-          <p className="mt-6 text-lg md:text-xl text-white/80 font-light tracking-widest uppercase">
-           Just For You
-          </p>
-        </div>
-
+        </motion.div>
       </div>
 
       {/* Login Dialog */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent className="sm:max-w-md glass border-gold/20" dir="rtl">
+        <DialogContent className="sm:max-w-md glass border-white/20" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="text-center text-3xl font-serif gradient-text">
+            <DialogTitle className="text-center text-3xl font-serif text-white">
               تسجيل الدخول
             </DialogTitle>
           </DialogHeader>
@@ -152,7 +178,7 @@ const HeroSection = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="أدخل اسم المستخدم"
-                className="h-12 border-gold/30 focus:border-gold bg-background/50"
+                className="h-12 border-white/30 focus:border-white bg-background/50"
               />
             </div>
             <div className="space-y-2">
@@ -163,7 +189,7 @@ const HeroSection = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="أدخل كلمة المرور"
-                className="h-12 border-gold/30 focus:border-gold bg-background/50"
+                className="h-12 border-white/30 focus:border-white bg-background/50"
               />
             </div>
             {error && (
@@ -173,7 +199,7 @@ const HeroSection = () => {
             )}
             <Button 
               type="submit" 
-              className="w-full h-12 text-lg btn-luxury rounded-xl font-medium"
+              className="w-full h-12 text-lg bg-white text-black hover:bg-white/90 rounded-xl font-medium"
             >
               دخول
             </Button>

@@ -14,44 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      delivery_prices: {
+        Row: {
+          created_at: string
+          home_price: number
+          id: string
+          office_price: number
+          updated_at: string
+          wilaya: string
+        }
+        Insert: {
+          created_at?: string
+          home_price?: number
+          id?: string
+          office_price?: number
+          updated_at?: string
+          wilaya: string
+        }
+        Update: {
+          created_at?: string
+          home_price?: number
+          id?: string
+          office_price?: number
+          updated_at?: string
+          wilaya?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
+          address_detail: string | null
           commune: string
           created_at: string
           customer_name: string
+          delivery_price: number | null
           delivery_type: string
           id: string
           phone: string
           product_id: string | null
           product_name: string
+          selected_color: string | null
+          selected_shoe_size: string | null
+          selected_size: string | null
           status: string
           total_price: number
           updated_at: string
           wilaya: string
         }
         Insert: {
+          address_detail?: string | null
           commune: string
           created_at?: string
           customer_name: string
+          delivery_price?: number | null
           delivery_type: string
           id?: string
           phone: string
           product_id?: string | null
           product_name: string
+          selected_color?: string | null
+          selected_shoe_size?: string | null
+          selected_size?: string | null
           status?: string
           total_price: number
           updated_at?: string
           wilaya: string
         }
         Update: {
+          address_detail?: string | null
           commune?: string
           created_at?: string
           customer_name?: string
+          delivery_price?: number | null
           delivery_type?: string
           id?: string
           phone?: string
           product_id?: string | null
           product_name?: string
+          selected_color?: string | null
+          selected_shoe_size?: string | null
+          selected_size?: string | null
           status?: string
           total_price?: number
           updated_at?: string
@@ -69,36 +138,56 @@ export type Database = {
       }
       products: {
         Row: {
+          category_id: string | null
+          colors: string[] | null
           created_at: string
           id: string
           images: string[] | null
           name: string
           new_price: number
           old_price: number
+          shoe_sizes: string[] | null
+          sizes: string[] | null
           updated_at: string
           video_url: string | null
         }
         Insert: {
+          category_id?: string | null
+          colors?: string[] | null
           created_at?: string
           id?: string
           images?: string[] | null
           name: string
           new_price: number
           old_price: number
+          shoe_sizes?: string[] | null
+          sizes?: string[] | null
           updated_at?: string
           video_url?: string | null
         }
         Update: {
+          category_id?: string | null
+          colors?: string[] | null
           created_at?: string
           id?: string
           images?: string[] | null
           name?: string
           new_price?: number
           old_price?: number
+          shoe_sizes?: string[] | null
+          sizes?: string[] | null
           updated_at?: string
           video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
