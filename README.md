@@ -1,1 +1,1 @@
-url : [https://fashion-storee.onrender.com](https://fashion-storee.onrender.com)
+url : [https://sneaky-shop.onrender.com](https://sneaky-shop.onrender.com)
