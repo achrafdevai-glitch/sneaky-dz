@@ -16,6 +16,8 @@ export interface Order {
   selected_color: string | null;
   selected_shoe_size: string | null;
   address_detail: string | null;
+  quantity: number;
+  notes: string | null;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   created_at: string;
   updated_at: string;

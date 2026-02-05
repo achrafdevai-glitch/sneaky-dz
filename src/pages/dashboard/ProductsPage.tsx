@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package } from "lucide-react";
 import { toast } from "sonner";
 
 const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
@@ -56,6 +58,9 @@ const ProductsPage = () => {
     sizes: [] as string[],
     colors: [] as string[],
     shoe_sizes: [] as string[],
+    notes: "",
+    show_notes: false,
+    show_quantity: false,
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -72,6 +77,9 @@ const ProductsPage = () => {
       sizes: [],
       colors: [],
       shoe_sizes: [],
+      notes: "",
+      show_notes: false,
+      show_quantity: false,
     });
     setEditingProduct(null);
     setColorInput("#000000");
@@ -89,6 +97,9 @@ const ProductsPage = () => {
       sizes: product.sizes || [],
       colors: product.colors || [],
       shoe_sizes: product.shoe_sizes || [],
+      notes: product.notes || "",
+      show_notes: product.show_notes || false,
+      show_quantity: product.show_quantity || false,
     });
     setIsDialogOpen(true);
   };
@@ -205,6 +216,9 @@ const ProductsPage = () => {
       sizes: formData.sizes,
       colors: formData.colors,
       shoe_sizes: formData.shoe_sizes,
+      notes: formData.notes || null,
+      show_notes: formData.show_notes,
+      show_quantity: formData.show_quantity,
     };
 
     try {
@@ -342,6 +356,52 @@ const ProductsPage = () => {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Quantity Toggle */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-gold" />
+                  <div>
+                    <Label>إظهار خيار الكمية للزبون</Label>
+                    <p className="text-xs text-muted-foreground">يمكن للزبون اختيار الكمية عند الطلب</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={formData.show_quantity}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, show_quantity: checked }))
+                  }
+                />
+              </div>
+
+              {/* Notes Section */}
+              <div className="space-y-3 p-4 rounded-xl bg-secondary/30 border border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-gold" />
+                    <div>
+                      <Label>إظهار الملاحظات للزبون</Label>
+                      <p className="text-xs text-muted-foreground">ستظهر هذه الملاحظات في صفحة الطلب</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.show_notes}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, show_notes: checked }))
+                    }
+                  />
+                </div>
+                {formData.show_notes && (
+                  <Textarea
+                    placeholder="أضف ملاحظات للزبون (مثل: هذا المنتج متوفر بكميات محدودة)"
+                    value={formData.notes}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                    }
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               {/* Clothing Sizes */}
@@ -552,6 +612,21 @@ const ProductsPage = () => {
                       <span className="text-muted-foreground">لا توجد صورة</span>
                     </div>
                   )}
+                  {/* Badges */}
+                  <div className="absolute top-2 right-2 flex flex-col gap-1">
+                    {product.show_quantity && (
+                      <span className="bg-gold/90 text-black text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        الكمية
+                      </span>
+                    )}
+                    {product.show_notes && (
+                      <span className="bg-gold/90 text-black text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3" />
+                        ملاحظة
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="p-4 space-y-3">
                   <h3 className="font-semibold truncate">{product.name}</h3>

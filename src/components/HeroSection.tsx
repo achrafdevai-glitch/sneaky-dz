@@ -122,7 +122,7 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-        {/* Floating Logo */}
+        {/* Floating Circular Logo */}
         <motion.div 
           className="cursor-pointer group"
           onClick={handleLogoClick}
@@ -131,14 +131,14 @@ const HeroSection = () => {
         >
           <div className="relative">
             {/* Glow Effect */}
-            <div className="absolute -inset-6 rounded-3xl bg-white/10 blur-2xl" />
+            <div className="absolute -inset-4 rounded-full bg-white/10 blur-2xl" />
             
-            {/* Logo Container */}
-            <div className="relative w-56 h-24 md:w-72 md:h-32 lg:w-80 lg:h-36 overflow-hidden group-hover:scale-105 transition-transform duration-700">
+            {/* Circular Logo Container */}
+            <div className="relative w-40 h-40 md:w-52 md:h-52 lg:w-60 lg:h-60 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-700 border-2 border-white/20 shadow-2xl">
               <img
                 src={logo}
                 alt="Sneaky Shop Logo"
-                className="w-full h-full object-contain drop-shadow-2xl"
+                className="w-full h-full object-cover drop-shadow-2xl"
               />
             </div>
           </div>
