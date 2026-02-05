@@ -6,10 +6,11 @@ import * as z from "zod";
 import { Product } from "@/hooks/useProducts";
 import { useCreateOrder } from "@/hooks/useOrders";
 import { useDeliveryPrices, getDeliveryPrice } from "@/hooks/useDeliveryPrices";
-import { wilayas, algiersCommunes } from "@/data/wilayas";
+import { wilayas, officeCommunes } from "@/data/wilayas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -18,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles, Truck, Palette, Ruler } from "lucide-react";
+import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles, Truck, Palette, Ruler, Package, MessageSquare } from "lucide-react";
 
 const orderSchema = z.object({
   customerName: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل").max(100, "الاسم طويل جداً"),
@@ -30,18 +31,25 @@ const orderSchema = z.object({
   selectedSize: z.string().optional(),
   selectedColor: z.string().optional(),
   selectedShoeSize: z.string().optional(),
+  quantity: z.number().min(1).optional(),
+  notes: z.string().optional(),
 });
 
 type OrderFormData = z.infer<typeof orderSchema>;
 
 interface OrderFormProps {
-  product: Product;
+  product: Product & { 
+    show_quantity?: boolean; 
+    show_notes?: boolean; 
+    notes?: string | null;
+  };
   onSuccess: () => void;
   onCancel: () => void;
 }
 
 const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
   const [isSuccess, setIsSuccess] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const createOrder = useCreateOrder();
   const { data: deliveryPrices } = useDeliveryPrices();
   const [deliveryPrice, setDeliveryPrice] = useState(0);
@@ -56,6 +64,7 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
     resolver: zodResolver(orderSchema),
     defaultValues: {
       deliveryType: "home",
+      quantity: 1,
     },
   });
 
@@ -64,8 +73,9 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
   const selectedWilayaData = wilayas.find((w) => w.id === selectedWilaya);
   const selectedWilayaName = selectedWilayaData?.name || "";
   
-  // Check if it's Algiers and home delivery
-  const isAlgiersHomeDelivery = selectedWilayaName === "الجزائر" && selectedDeliveryType === "home";
+  // Check if wilaya has office communes
+  const hasOfficeCommunes = selectedWilayaName && officeCommunes[selectedWilayaName] && officeCommunes[selectedWilayaName].length > 0;
+  const showOfficeCommuneSelector = selectedDeliveryType === "office" && hasOfficeCommunes;
 
   useEffect(() => {
     if (selectedWilayaName && selectedDeliveryType && deliveryPrices) {
@@ -85,11 +95,13 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         commune: selectedWilayaData?.communes.find((c) => c.id === data.commune)?.name || data.commune,
         delivery_type: data.deliveryType,
         delivery_price: deliveryPrice,
-        total_price: product.new_price + deliveryPrice,
+        total_price: (product.new_price * quantity) + deliveryPrice,
         selected_size: data.selectedSize || null,
         selected_color: data.selectedColor || null,
         selected_shoe_size: data.selectedShoeSize || null,
         address_detail: data.addressDetail || null,
+        quantity: quantity,
+        notes: data.notes || null,
       });
       setIsSuccess(true);
       setTimeout(() => {
@@ -207,6 +219,42 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Quantity Selection */}
+      {product.show_quantity && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.12 }}
+          className="space-y-2"
+        >
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <Package className="w-4 h-4 text-gold" />
+            الكمية
+          </Label>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-lg"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            >
+              -
+            </Button>
+            <span className="text-xl font-bold w-12 text-center">{quantity}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-lg"
+              onClick={() => setQuantity(quantity + 1)}
+            >
+              +
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Size Selection */}
       {product.sizes && product.sizes.length > 0 && (
@@ -430,9 +478,9 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         </RadioGroup>
       </motion.div>
 
-      {/* Address Detail for Algiers Home Delivery */}
+      {/* Office Commune Selection - Shows when "office" is selected and wilaya has branches */}
       <AnimatePresence>
-        {isAlgiersHomeDelivery && (
+        {showOfficeCommuneSelector && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -441,14 +489,14 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
           >
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Truck className="w-4 h-4 text-gold" />
-              البلدية للتوصيل المنزلي
+              فرع المكتب
             </Label>
             <Select onValueChange={(value) => setValue("addressDetail", value)}>
               <SelectTrigger className="h-12 rounded-xl border-border/50 focus:border-gold bg-secondary/30">
-                <SelectValue placeholder="اختر البلدية للتوصيل" />
+                <SelectValue placeholder="اختر فرع المكتب" />
               </SelectTrigger>
               <SelectContent className="rounded-xl max-h-60">
-                {algiersCommunes.map((commune) => (
+                {officeCommunes[selectedWilayaName].map((commune) => (
                   <SelectItem key={commune} value={commune} className="rounded-lg">
                     {commune}
                   </SelectItem>
@@ -458,6 +506,43 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Product Notes Display */}
+      {product.show_notes && product.notes && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.35 }}
+          className="p-4 rounded-xl bg-gold/10 border border-gold/20"
+        >
+          <div className="flex items-start gap-2">
+            <MessageSquare className="w-5 h-5 text-gold mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-gold mb-1">ملاحظة من المتجر:</p>
+              <p className="text-sm text-muted-foreground">{product.notes}</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Customer Notes */}
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.38 }}
+        className="space-y-2"
+      >
+        <Label htmlFor="notes" className="flex items-center gap-2 text-sm font-medium">
+          <MessageSquare className="w-4 h-4 text-gold" />
+          ملاحظاتك (اختياري)
+        </Label>
+        <Textarea
+          id="notes"
+          placeholder="أضف أي ملاحظات خاصة بطلبك..."
+          className="rounded-xl border-border/50 focus:border-gold bg-secondary/30 min-h-[80px]"
+          {...register("notes")}
+        />
+      </motion.div>
 
       {/* Price Summary */}
       <motion.div 
@@ -470,22 +555,27 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
           <span className="text-muted-foreground">سعر المنتج:</span>
           <span className="font-medium">{product.new_price.toLocaleString()} د.ج</span>
         </div>
+        {product.show_quantity && quantity > 1 && (
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">الكمية:</span>
+            <span className="font-medium">x{quantity}</span>
+          </div>
+        )}
         <div className="flex justify-between items-center text-sm">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Truck className="w-4 h-4" />
-            سعر التوصيل:
-          </span>
+          <span className="text-muted-foreground">سعر التوصيل:</span>
           <span className="font-medium">{deliveryPrice.toLocaleString()} د.ج</span>
         </div>
-        <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-secondary/50 to-muted/30">
-          <span className="text-lg font-medium">المجموع:</span>
-          <span className="text-2xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
-            {(product.new_price + deliveryPrice).toLocaleString()} د.ج
+        <div className="flex justify-between items-center text-lg font-bold pt-3 border-t border-border/30">
+          <span className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+            المجموع:
+          </span>
+          <span className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+            {((product.new_price * quantity) + deliveryPrice).toLocaleString()} د.ج
           </span>
         </div>
       </motion.div>
 
-      {/* Buttons */}
+      {/* Submit Buttons */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -495,23 +585,23 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         <Button
           type="button"
           variant="outline"
-          className="flex-1 h-12 rounded-xl border-border/50"
           onClick={onCancel}
+          className="flex-1 h-12 rounded-xl"
         >
           إلغاء
         </Button>
         <Button
           type="submit"
-          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-gold to-gold-light hover:from-primary hover:to-primary text-primary-foreground font-medium shadow-lg"
           disabled={createOrder.isPending}
+          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-gold to-gold-light text-primary-foreground hover:opacity-90"
         >
           {createOrder.isPending ? (
-            <>
-              <Loader2 className="w-5 h-5 ml-2 animate-spin" />
-              جاري الإرسال...
-            </>
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            "تأكيد الطلب"
+            <>
+              <Sparkles className="h-4 w-4 ml-2" />
+              تأكيد الطلب
+            </>
           )}
         </Button>
       </motion.div>

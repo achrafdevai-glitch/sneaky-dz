@@ -77,9 +77,11 @@ export type Database = {
           delivery_price: number | null
           delivery_type: string
           id: string
+          notes: string | null
           phone: string
           product_id: string | null
           product_name: string
+          quantity: number | null
           selected_color: string | null
           selected_shoe_size: string | null
           selected_size: string | null
@@ -96,9 +98,11 @@ export type Database = {
           delivery_price?: number | null
           delivery_type: string
           id?: string
+          notes?: string | null
           phone: string
           product_id?: string | null
           product_name: string
+          quantity?: number | null
           selected_color?: string | null
           selected_shoe_size?: string | null
           selected_size?: string | null
@@ -115,9 +119,11 @@ export type Database = {
           delivery_price?: number | null
           delivery_type?: string
           id?: string
+          notes?: string | null
           phone?: string
           product_id?: string | null
           product_name?: string
+          quantity?: number | null
           selected_color?: string | null
           selected_shoe_size?: string | null
           selected_size?: string | null
@@ -145,8 +151,11 @@ export type Database = {
           images: string[] | null
           name: string
           new_price: number
+          notes: string | null
           old_price: number
           shoe_sizes: string[] | null
+          show_notes: boolean | null
+          show_quantity: boolean | null
           sizes: string[] | null
           updated_at: string
           video_url: string | null
@@ -159,8 +168,11 @@ export type Database = {
           images?: string[] | null
           name: string
           new_price: number
+          notes?: string | null
           old_price: number
           shoe_sizes?: string[] | null
+          show_notes?: boolean | null
+          show_quantity?: boolean | null
           sizes?: string[] | null
           updated_at?: string
           video_url?: string | null
@@ -173,8 +185,11 @@ export type Database = {
           images?: string[] | null
           name?: string
           new_price?: number
+          notes?: string | null
           old_price?: number
           shoe_sizes?: string[] | null
+          show_notes?: boolean | null
+          show_quantity?: boolean | null
           sizes?: string[] | null
           updated_at?: string
           video_url?: string | null
