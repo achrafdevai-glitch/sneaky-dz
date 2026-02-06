@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Sparkles, TrendingDown } from "lucide-react";
+import { ShoppingBag, Sparkles, TrendingDown, XCircle } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +12,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
   const discount = Math.round(((product.old_price - product.new_price) / product.old_price) * 100);
+  const isOutOfStock = product.stock !== null && product.stock <= 0;
 
   return (
     <motion.div
@@ -25,7 +26,7 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
       whileHover={{ y: -8 }}
     >
       <Card 
-        className="overflow-hidden cursor-pointer bg-card border-0 shadow-xl hover:shadow-2xl transition-all duration-500 group relative"
+        className={`overflow-hidden cursor-pointer bg-card border-0 shadow-xl hover:shadow-2xl transition-all duration-500 group relative ${isOutOfStock ? 'opacity-75' : ''}`}
         onClick={() => onSelect(product)}
       >
         {/* Decorative corner accent */}
@@ -36,7 +37,7 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
             <motion.img
               src={product.images[0]}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale' : ''}`}
               whileHover={{ scale: 1.08 }}
               transition={{ duration: 0.6 }}
             />
@@ -49,8 +50,22 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
+          {/* Out of Stock Badge */}
+          {isOutOfStock && (
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute inset-0 flex items-center justify-center bg-black/60 z-20"
+            >
+              <div className="bg-destructive text-destructive-foreground px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-lg">
+                <XCircle className="w-5 h-5" />
+                نفذت الكمية
+              </div>
+            </motion.div>
+          )}
+          
           {/* Discount Badge */}
-          {discount > 0 && (
+          {discount > 0 && !isOutOfStock && (
             <motion.div 
               initial={{ scale: 0, rotate: -12 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -63,22 +78,24 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
           )}
 
           {/* Quick View Button */}
-          <motion.div 
-            className="absolute inset-x-4 bottom-4 opacity-0 group-hover:opacity-100"
-            initial={{ y: 20 }}
-            whileHover={{ y: 0 }}
-          >
-            <Button 
-              className="w-full bg-white/95 text-foreground hover:bg-white rounded-xl shadow-2xl font-medium backdrop-blur-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(product);
-              }}
+          {!isOutOfStock && (
+            <motion.div 
+              className="absolute inset-x-4 bottom-4 opacity-0 group-hover:opacity-100"
+              initial={{ y: 20 }}
+              whileHover={{ y: 0 }}
             >
-              <Sparkles className="w-4 h-4 ml-2 text-gold" />
-              عرض التفاصيل
-            </Button>
-          </motion.div>
+              <Button 
+                className="w-full bg-white/95 text-foreground hover:bg-white rounded-xl shadow-2xl font-medium backdrop-blur-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(product);
+                }}
+              >
+                <Sparkles className="w-4 h-4 ml-2 text-gold" />
+                عرض التفاصيل
+              </Button>
+            </motion.div>
+          )}
         </div>
         
         <CardContent className="p-5 space-y-4 bg-gradient-to-b from-card to-secondary/30" dir="rtl">
@@ -90,7 +107,7 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
           {/* Price Section - Premium Design */}
           <div className="space-y-2">
             <div className="flex items-end gap-3">
-              <span className="text-2xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+              <span className={`text-2xl font-bold bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent ${isOutOfStock ? 'opacity-50' : ''}`}>
                 {product.new_price.toLocaleString()}
               </span>
               <span className="text-sm text-gold/80 font-medium pb-0.5">د.ج</span>
@@ -109,17 +126,31 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
           </div>
           
           {/* Order Button - Premium */}
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <motion.div whileHover={{ scale: isOutOfStock ? 1 : 1.02 }} whileTap={{ scale: isOutOfStock ? 1 : 0.98 }}>
             <Button 
-              className="w-full bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-gold hover:via-gold hover:to-gold-light text-primary-foreground rounded-xl h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300 group/btn overflow-hidden relative"
+              className={`w-full rounded-xl h-12 text-base font-medium shadow-lg transition-all duration-300 group/btn overflow-hidden relative ${
+                isOutOfStock 
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-gold hover:via-gold hover:to-gold-light text-primary-foreground hover:shadow-xl'
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect(product);
+                if (!isOutOfStock) onSelect(product);
               }}
+              disabled={isOutOfStock}
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-gold/0 via-white/20 to-gold/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
-              <ShoppingBag className="w-5 h-5 ml-2 group-hover/btn:rotate-12 transition-transform" />
-              اطلب الآن
+              {isOutOfStock ? (
+                <>
+                  <XCircle className="w-5 h-5 ml-2" />
+                  نفذت الكمية
+                </>
+              ) : (
+                <>
+                  <span className="absolute inset-0 bg-gradient-to-r from-gold/0 via-white/20 to-gold/0 translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700" />
+                  <ShoppingBag className="w-5 h-5 ml-2 group-hover/btn:rotate-12 transition-transform" />
+                  اطلب الآن
+                </>
+              )}
             </Button>
           </motion.div>
         </CardContent>

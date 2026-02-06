@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag, XCircle } from "lucide-react";
 import OrderForm from "./OrderForm";
 
 interface ProductModalProps {
@@ -25,6 +25,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
 
   const images = product.images || [];
   const hasVideo = !!product.video_url;
+  const isOutOfStock = product.stock !== null && product.stock <= 0;
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -271,22 +272,48 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
                   </div>
                 </motion.div>
 
+                {/* Out of Stock Notice */}
+                {isOutOfStock && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-5 rounded-2xl bg-destructive/10 border border-destructive/30 flex items-center justify-center gap-3"
+                  >
+                    <XCircle className="w-6 h-6 text-destructive" />
+                    <span className="text-lg font-bold text-destructive">نفذت الكمية - المنتج غير متوفر حالياً</span>
+                  </motion.div>
+                )}
+
                 {/* Order Button - Premium */}
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: isOutOfStock ? 1 : 1.02 }}
+                  whileTap={{ scale: isOutOfStock ? 1 : 0.98 }}
                 >
                   <Button
                     size="lg"
-                    className="w-full text-lg py-7 rounded-2xl font-medium relative overflow-hidden group bg-gradient-to-r from-gold via-gold-light to-gold hover:from-primary hover:to-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-500"
-                    onClick={() => setShowOrderForm(true)}
+                    className={`w-full text-lg py-7 rounded-2xl font-medium relative overflow-hidden group ${
+                      isOutOfStock
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                        : 'bg-gradient-to-r from-gold via-gold-light to-gold hover:from-primary hover:to-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-500'
+                    }`}
+                    onClick={() => !isOutOfStock && setShowOrderForm(true)}
+                    disabled={isOutOfStock}
                   >
-                    {/* Shine effect */}
-                    <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                    
-                    <ShoppingBag className="w-6 h-6 ml-3 group-hover:rotate-12 transition-transform" />
-                    <span className="relative">اطلب الآن</span>
-                    <Sparkles className="w-5 h-5 mr-3 opacity-70" />
+                    {isOutOfStock ? (
+                      <>
+                        <XCircle className="w-6 h-6 ml-3" />
+                        <span>نفذت الكمية</span>
+                      </>
+                    ) : (
+                      <>
+                        {/* Shine effect */}
+                        <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                        
+                        <ShoppingBag className="w-6 h-6 ml-3 group-hover:rotate-12 transition-transform" />
+                        <span className="relative">اطلب الآن</span>
+                        <Sparkles className="w-5 h-5 mr-3 opacity-70" />
+                      </>
+                    )}
                   </Button>
                 </motion.div>
               </div>

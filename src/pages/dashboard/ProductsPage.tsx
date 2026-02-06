@@ -61,6 +61,7 @@ const ProductsPage = () => {
     notes: "",
     show_notes: false,
     show_quantity: false,
+    stock: "" as string,
   });
 
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +81,7 @@ const ProductsPage = () => {
       notes: "",
       show_notes: false,
       show_quantity: false,
+      stock: "",
     });
     setEditingProduct(null);
     setColorInput("#000000");
@@ -100,6 +102,7 @@ const ProductsPage = () => {
       notes: product.notes || "",
       show_notes: product.show_notes || false,
       show_quantity: product.show_quantity || false,
+      stock: product.stock?.toString() || "",
     });
     setIsDialogOpen(true);
   };
@@ -219,6 +222,7 @@ const ProductsPage = () => {
       notes: formData.notes || null,
       show_notes: formData.show_notes,
       show_quantity: formData.show_quantity,
+      stock: formData.stock ? parseInt(formData.stock) : null,
     };
 
     try {
@@ -359,20 +363,37 @@ const ProductsPage = () => {
               </div>
 
               {/* Quantity Toggle */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 border border-border/50">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-gold" />
-                  <div>
-                    <Label>إظهار خيار الكمية للزبون</Label>
-                    <p className="text-xs text-muted-foreground">يمكن للزبون اختيار الكمية عند الطلب</p>
+              <div className="space-y-3 p-4 rounded-xl bg-secondary/30 border border-border/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-gold" />
+                    <div>
+                      <Label>إظهار خيار الكمية للزبون</Label>
+                      <p className="text-xs text-muted-foreground">يمكن للزبون اختيار الكمية عند الطلب</p>
+                    </div>
                   </div>
+                  <Switch
+                    checked={formData.show_quantity}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, show_quantity: checked }))
+                    }
+                  />
                 </div>
-                <Switch
-                  checked={formData.show_quantity}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, show_quantity: checked }))
-                  }
-                />
+                
+                {/* Stock Input */}
+                <div className="space-y-2 pt-2 border-t border-border/30">
+                  <Label>الكمية المتوفرة في المخزن</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="اتركه فارغاً إذا كانت الكمية غير محدودة"
+                    value={formData.stock}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, stock: e.target.value }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">عند نفاد الكمية سيظهر للزبون "نفذت الكمية"</p>
+                </div>
               </div>
 
               {/* Notes Section */}

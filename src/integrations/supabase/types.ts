@@ -157,6 +157,7 @@ export type Database = {
           show_notes: boolean | null
           show_quantity: boolean | null
           sizes: string[] | null
+          stock: number | null
           updated_at: string
           video_url: string | null
         }
@@ -174,6 +175,7 @@ export type Database = {
           show_notes?: boolean | null
           show_quantity?: boolean | null
           sizes?: string[] | null
+          stock?: number | null
           updated_at?: string
           video_url?: string | null
         }
@@ -191,6 +193,7 @@ export type Database = {
           show_notes?: boolean | null
           show_quantity?: boolean | null
           sizes?: string[] | null
+          stock?: number | null
           updated_at?: string
           video_url?: string | null
         }
