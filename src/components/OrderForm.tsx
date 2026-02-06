@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Product } from "@/hooks/useProducts";
 import { useCreateOrder } from "@/hooks/useOrders";
+import { useProductVariants } from "@/hooks/useProductVariants";
 import { useDeliveryPrices, getDeliveryPrice } from "@/hooks/useDeliveryPrices";
 import { wilayas, officeCommunes } from "@/data/wilayas";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles, Truck, Palette, Ruler, Package, MessageSquare } from "lucide-react";
+import { CheckCircle, Loader2, Home, Building2, User, Phone, MapPin, Sparkles, Truck, Palette, Ruler, Package, MessageSquare, XCircle } from "lucide-react";
 
 const orderSchema = z.object({
   customerName: z.string().min(3, "الاسم يجب أن يكون 3 أحرف على الأقل").max(100, "الاسم طويل جداً"),
@@ -52,7 +53,10 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
   const [quantity, setQuantity] = useState(1);
   const createOrder = useCreateOrder();
   const { data: deliveryPrices } = useDeliveryPrices();
+  const { data: variants } = useProductVariants(product.id);
   const [deliveryPrice, setDeliveryPrice] = useState(0);
+
+  const hasVariants = variants && variants.length > 0;
 
   const {
     register,
@@ -70,12 +74,58 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
 
   const selectedWilaya = watch("wilaya");
   const selectedDeliveryType = watch("deliveryType");
+  const selectedColor = watch("selectedColor");
+  const selectedSize = watch("selectedSize");
+  const selectedShoeSize = watch("selectedShoeSize");
   const selectedWilayaData = wilayas.find((w) => w.id === selectedWilaya);
   const selectedWilayaName = selectedWilayaData?.name || "";
   
   // Check if wilaya has office communes
   const hasOfficeCommunes = selectedWilayaName && officeCommunes[selectedWilayaName] && officeCommunes[selectedWilayaName].length > 0;
   const showOfficeCommuneSelector = selectedDeliveryType === "office" && hasOfficeCommunes;
+
+  // Get available sizes for selected color (when using variants)
+  const getAvailableSizesForColor = (color: string) => {
+    if (!hasVariants) return [];
+    return variants.filter(v => v.color === color && v.stock > 0);
+  };
+
+  // Get stock for a specific color-size combination
+  const getVariantStock = (color: string, size: string) => {
+    if (!hasVariants) return null;
+    const variant = variants.find(v => v.color === color && v.size === size);
+    return variant?.stock ?? 0;
+  };
+
+  // Check if a size is available for selected color
+  const isSizeAvailable = (size: string) => {
+    if (!hasVariants || !selectedColor) return true;
+    const variant = variants.find(v => v.color === selectedColor && v.size === size);
+    return variant && variant.stock > 0;
+  };
+
+  // Get all sizes available for selected color
+  const availableSizesForSelectedColor = selectedColor 
+    ? getAvailableSizesForColor(selectedColor)
+    : [];
+
+  // Check if overall variant is out of stock
+  const isVariantOutOfStock = () => {
+    if (!hasVariants) return false;
+    if (!selectedColor) return false;
+    const selectedSizeValue = selectedSize || selectedShoeSize;
+    if (!selectedSizeValue) return false;
+    const stock = getVariantStock(selectedColor, selectedSizeValue);
+    return stock !== null && stock <= 0;
+  };
+
+  // Clear size when color changes
+  useEffect(() => {
+    if (hasVariants && selectedColor) {
+      setValue("selectedSize", "");
+      setValue("selectedShoeSize", "");
+    }
+  }, [selectedColor, hasVariants, setValue]);
 
   useEffect(() => {
     if (selectedWilayaName && selectedDeliveryType && deliveryPrices) {
@@ -155,6 +205,15 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
       </motion.div>
     );
   }
+
+  // Determine which sizes to show based on variant mode
+  const clothingSizes = hasVariants && selectedColor
+    ? availableSizesForSelectedColor.filter(v => ["S", "M", "L", "XL", "XXL", "XXXL"].includes(v.size))
+    : (product.sizes || []).map(s => ({ size: s, stock: null }));
+  
+  const shoeSizes = hasVariants && selectedColor
+    ? availableSizesForSelectedColor.filter(v => ["38", "39", "40", "41", "42", "43", "44"].includes(v.size))
+    : (product.shoe_sizes || []).map(s => ({ size: s, stock: null }));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -256,8 +315,50 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         </motion.div>
       )}
 
-      {/* Size Selection */}
-      {product.sizes && product.sizes.length > 0 && (
+      {/* Color Selection - FIRST when using variants */}
+      {product.colors && product.colors.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.13 }}
+          className="space-y-2"
+        >
+          <Label className="flex items-center gap-2 text-sm font-medium">
+            <Palette className="w-4 h-4 text-gold" />
+            اللون {hasVariants && <span className="text-xs text-muted-foreground">(اختر اللون أولاً)</span>}
+          </Label>
+          <div className="flex flex-wrap gap-2">
+            {product.colors.map((color) => {
+              const colorVariants = hasVariants ? variants.filter(v => v.color === color) : [];
+              const isColorAvailable = !hasVariants || colorVariants.some(v => v.stock > 0);
+              
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  disabled={!isColorAvailable}
+                  onClick={() => setValue("selectedColor", color)}
+                  className={`relative w-10 h-10 rounded-full border-2 transition-all ${
+                    selectedColor === color
+                      ? "border-gold ring-2 ring-gold ring-offset-2 ring-offset-background"
+                      : isColorAvailable
+                        ? "border-border hover:border-gold/50"
+                        : "border-border opacity-30 cursor-not-allowed"
+                  }`}
+                  style={{ backgroundColor: color }}
+                >
+                  {!isColorAvailable && (
+                    <XCircle className="absolute inset-0 m-auto w-5 h-5 text-white drop-shadow-md" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Size Selection - Shows only after color is selected when using variants */}
+      {clothingSizes.length > 0 && (!hasVariants || selectedColor) && (
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -269,26 +370,36 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
             المقاس
           </Label>
           <div className="flex flex-wrap gap-2">
-            {product.sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setValue("selectedSize", size)}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                  watch("selectedSize") === size
-                    ? "bg-gold text-black border-gold"
-                    : "border-border hover:border-gold/50"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
+            {(hasVariants ? clothingSizes : (product.sizes || []).map(s => ({ size: s, stock: null as number | null }))).map(({ size, stock }) => {
+              const available = !hasVariants || (stock !== null && stock > 0);
+              
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  disabled={!available}
+                  onClick={() => setValue("selectedSize", size)}
+                  className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                    selectedSize === size
+                      ? "bg-gold text-black border-gold"
+                      : available
+                        ? "border-border hover:border-gold/50"
+                        : "border-border opacity-30 cursor-not-allowed line-through"
+                  }`}
+                >
+                  {size}
+                  {hasVariants && stock !== null && stock > 0 && stock <= 3 && (
+                    <span className="text-xs mr-1 text-destructive">({stock})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
       )}
 
-      {/* Shoe Size Selection */}
-      {product.shoe_sizes && product.shoe_sizes.length > 0 && (
+      {/* Shoe Size Selection - Shows only after color is selected when using variants */}
+      {shoeSizes.length > 0 && (!hasVariants || selectedColor) && (
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -300,51 +411,42 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
             مقاس الحذاء
           </Label>
           <div className="flex flex-wrap gap-2">
-            {product.shoe_sizes.map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => setValue("selectedShoeSize", size)}
-                className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                  watch("selectedShoeSize") === size
-                    ? "bg-gold text-black border-gold"
-                    : "border-border hover:border-gold/50"
-                }`}
-              >
-                {size}
-              </button>
-            ))}
+            {(hasVariants ? shoeSizes : (product.shoe_sizes || []).map(s => ({ size: s, stock: null as number | null }))).map(({ size, stock }) => {
+              const available = !hasVariants || (stock !== null && stock > 0);
+              
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  disabled={!available}
+                  onClick={() => setValue("selectedShoeSize", size)}
+                  className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                    selectedShoeSize === size
+                      ? "bg-gold text-black border-gold"
+                      : available
+                        ? "border-border hover:border-gold/50"
+                        : "border-border opacity-30 cursor-not-allowed line-through"
+                  }`}
+                >
+                  {size}
+                  {hasVariants && stock !== null && stock > 0 && stock <= 3 && (
+                    <span className="text-xs mr-1 text-destructive">({stock})</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </motion.div>
       )}
 
-      {/* Color Selection */}
-      {product.colors && product.colors.length > 0 && (
+      {/* Message when color not selected but has variants */}
+      {hasVariants && !selectedColor && (clothingSizes.length > 0 || shoeSizes.length > 0) && (
         <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.15 }}
-          className="space-y-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="p-3 rounded-xl bg-gold/10 border border-gold/20 text-center"
         >
-          <Label className="flex items-center gap-2 text-sm font-medium">
-            <Palette className="w-4 h-4 text-gold" />
-            اللون
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {product.colors.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setValue("selectedColor", color)}
-                className={`w-10 h-10 rounded-full border-2 transition-all ${
-                  watch("selectedColor") === color
-                    ? "border-gold ring-2 ring-gold ring-offset-2 ring-offset-background"
-                    : "border-border hover:border-gold/50"
-                }`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
+          <p className="text-sm text-gold">اختر اللون أولاً لعرض المقاسات المتوفرة</p>
         </motion.div>
       )}
 
@@ -592,7 +694,7 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
         </Button>
         <Button
           type="submit"
-          disabled={createOrder.isPending}
+          disabled={createOrder.isPending || isVariantOutOfStock()}
           className="flex-1 h-12 rounded-xl bg-gradient-to-r from-gold to-gold-light text-primary-foreground hover:opacity-90"
         >
           {createOrder.isPending ? (
