@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
+import { useProductVariants } from "@/hooks/useProductVariants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Sparkles, TrendingDown, XCircle } from "lucide-react";
@@ -11,8 +12,16 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
+  const { data: variants } = useProductVariants(product.id);
+  
   const discount = Math.round(((product.old_price - product.new_price) / product.old_price) * 100);
-  const isOutOfStock = product.stock !== null && product.stock <= 0;
+  
+  // Check stock: if using variants, check if any variant has stock; otherwise use product.stock
+  const hasVariants = variants && variants.length > 0;
+  const totalVariantStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
+  const isOutOfStock = hasVariants 
+    ? totalVariantStock === 0 
+    : (product.stock !== null && product.stock <= 0);
 
   return (
     <motion.div

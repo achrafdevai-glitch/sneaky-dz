@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useProducts,
@@ -8,11 +8,11 @@ import {
   Product,
 } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
+import { useProductVariants, useBulkUpsertVariants } from "@/hooks/useProductVariants";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -30,11 +30,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
 const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
+
+interface VariantItem {
+  color: string;
+  size: string;
+  stock: number;
+}
 
 const ProductsPage = () => {
   const { data: products, isLoading } = useProducts();
@@ -42,11 +48,17 @@ const ProductsPage = () => {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const bulkUpsertVariants = useBulkUpsertVariants();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [colorInput, setColorInput] = useState("#000000");
+  const [useVariants, setUseVariants] = useState(false);
+  const [variants, setVariants] = useState<VariantItem[]>([]);
+  const [selectedVariantColor, setSelectedVariantColor] = useState<string | null>(null);
+
+  const { data: existingVariants } = useProductVariants(editingProduct?.id || null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -67,6 +79,21 @@ const ProductsPage = () => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
+  // Load existing variants when editing
+  useEffect(() => {
+    if (existingVariants && existingVariants.length > 0) {
+      setUseVariants(true);
+      setVariants(existingVariants.map(v => ({
+        color: v.color,
+        size: v.size,
+        stock: v.stock,
+      })));
+      // Extract unique colors
+      const uniqueColors = [...new Set(existingVariants.map(v => v.color))];
+      setFormData(prev => ({ ...prev, colors: uniqueColors }));
+    }
+  }, [existingVariants]);
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -85,6 +112,9 @@ const ProductsPage = () => {
     });
     setEditingProduct(null);
     setColorInput("#000000");
+    setUseVariants(false);
+    setVariants([]);
+    setSelectedVariantColor(null);
   };
 
   const openEditDialog = (product: Product) => {
@@ -172,24 +202,6 @@ const ProductsPage = () => {
     }));
   };
 
-  const toggleSize = (size: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: prev.sizes.includes(size)
-        ? prev.sizes.filter((s) => s !== size)
-        : [...prev.sizes, size],
-    }));
-  };
-
-  const toggleShoeSize = (size: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      shoe_sizes: prev.shoe_sizes.includes(size)
-        ? prev.shoe_sizes.filter((s) => s !== size)
-        : [...prev.shoe_sizes, size],
-    }));
-  };
-
   const addColor = () => {
     if (colorInput && !formData.colors.includes(colorInput)) {
       setFormData((prev) => ({
@@ -204,6 +216,38 @@ const ProductsPage = () => {
       ...prev,
       colors: prev.colors.filter((c) => c !== color),
     }));
+    // Also remove variants for this color
+    setVariants(prev => prev.filter(v => v.color !== color));
+    if (selectedVariantColor === color) {
+      setSelectedVariantColor(null);
+    }
+  };
+
+  // Variant management
+  const toggleVariantSize = (color: string, size: string, sizeType: 'clothing' | 'shoe') => {
+    const existingVariant = variants.find(v => v.color === color && v.size === size);
+    if (existingVariant) {
+      // Remove variant
+      setVariants(prev => prev.filter(v => !(v.color === color && v.size === size)));
+    } else {
+      // Add variant with default stock of 0
+      setVariants(prev => [...prev, { color, size, stock: 0 }]);
+    }
+  };
+
+  const updateVariantStock = (color: string, size: string, stock: number) => {
+    setVariants(prev => prev.map(v => 
+      v.color === color && v.size === size ? { ...v, stock } : v
+    ));
+  };
+
+  const getVariantStock = (color: string, size: string): number => {
+    const variant = variants.find(v => v.color === color && v.size === size);
+    return variant?.stock ?? 0;
+  };
+
+  const isVariantSelected = (color: string, size: string): boolean => {
+    return variants.some(v => v.color === color && v.size === size);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -216,23 +260,36 @@ const ProductsPage = () => {
       images: formData.images,
       video_url: formData.video_url || null,
       category_id: formData.category_id,
-      sizes: formData.sizes,
+      sizes: useVariants ? [] : formData.sizes,
       colors: formData.colors,
-      shoe_sizes: formData.shoe_sizes,
+      shoe_sizes: useVariants ? [] : formData.shoe_sizes,
       notes: formData.notes || null,
       show_notes: formData.show_notes,
       show_quantity: formData.show_quantity,
-      stock: formData.stock ? parseInt(formData.stock) : null,
+      stock: useVariants ? null : (formData.stock ? parseInt(formData.stock) : null),
     };
 
     try {
+      let productId: string;
+      
       if (editingProduct) {
         await updateProduct.mutateAsync({ id: editingProduct.id, ...productData });
+        productId = editingProduct.id;
         toast.success("تم تحديث المنتج بنجاح");
       } else {
-        await createProduct.mutateAsync(productData);
+        const result = await createProduct.mutateAsync(productData);
+        productId = result.id;
         toast.success("تم إضافة المنتج بنجاح");
       }
+
+      // Save variants if using variant mode
+      if (useVariants && variants.length > 0) {
+        await bulkUpsertVariants.mutateAsync({ productId, variants });
+      } else if (useVariants) {
+        // Clear variants if none selected
+        await bulkUpsertVariants.mutateAsync({ productId, variants: [] });
+      }
+
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -379,21 +436,6 @@ const ProductsPage = () => {
                     }
                   />
                 </div>
-                
-                {/* Stock Input */}
-                <div className="space-y-2 pt-2 border-t border-border/30">
-                  <Label>الكمية المتوفرة في المخزن</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    placeholder="اتركه فارغاً إذا كانت الكمية غير محدودة"
-                    value={formData.stock}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, stock: e.target.value }))
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">عند نفاد الكمية سيظهر للزبون "نفذت الكمية"</p>
-                </div>
               </div>
 
               {/* Notes Section */}
@@ -423,48 +465,6 @@ const ProductsPage = () => {
                     className="mt-2"
                   />
                 )}
-              </div>
-
-              {/* Clothing Sizes */}
-              <div className="space-y-2">
-                <Label>مقاسات الملابس</Label>
-                <div className="flex flex-wrap gap-2">
-                  {CLOTHING_SIZES.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => toggleSize(size)}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                        formData.sizes.includes(size)
-                          ? "bg-gold text-black border-gold"
-                          : "border-border hover:border-gold/50"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Shoe Sizes */}
-              <div className="space-y-2">
-                <Label>مقاسات الأحذية</Label>
-                <div className="flex flex-wrap gap-2">
-                  {SHOE_SIZES.map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => toggleShoeSize(size)}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                        formData.shoe_sizes.includes(size)
-                          ? "bg-gold text-black border-gold"
-                          : "border-border hover:border-gold/50"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Colors */}
@@ -505,6 +505,202 @@ const ProductsPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Variants Mode Toggle */}
+              {formData.colors.length > 0 && (
+                <div className="space-y-3 p-4 rounded-xl bg-gold/10 border border-gold/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-gold" />
+                      <div>
+                        <Label>ربط المقاسات بالألوان</Label>
+                        <p className="text-xs text-muted-foreground">تحديد مقاسات وكمية مختلفة لكل لون</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={useVariants}
+                      onCheckedChange={setUseVariants}
+                    />
+                  </div>
+
+                  {useVariants && (
+                    <div className="space-y-4 pt-3 border-t border-gold/20">
+                      {/* Color Tabs */}
+                      <div className="flex flex-wrap gap-2">
+                        {formData.colors.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setSelectedVariantColor(color)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                              selectedVariantColor === color
+                                ? "border-gold bg-gold/20"
+                                : "border-border hover:border-gold/50"
+                            }`}
+                          >
+                            <div
+                              className="w-4 h-4 rounded-full border"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-sm">
+                              {variants.filter(v => v.color === color).length} مقاس
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Sizes for selected color */}
+                      {selectedVariantColor && (
+                        <div className="space-y-3 p-3 rounded-lg bg-secondary/50">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div
+                              className="w-5 h-5 rounded-full border"
+                              style={{ backgroundColor: selectedVariantColor }}
+                            />
+                            <span className="font-medium">اختر المقاسات المتوفرة لهذا اللون</span>
+                          </div>
+
+                          {/* Clothing Sizes */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">مقاسات الملابس</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {CLOTHING_SIZES.map((size) => (
+                                <div key={size} className="flex flex-col items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleVariantSize(selectedVariantColor, size, 'clothing')}
+                                    className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                                      isVariantSelected(selectedVariantColor, size)
+                                        ? "bg-gold text-black border-gold"
+                                        : "border-border hover:border-gold/50"
+                                    }`}
+                                  >
+                                    {size}
+                                  </button>
+                                  {isVariantSelected(selectedVariantColor, size) && (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={getVariantStock(selectedVariantColor, size)}
+                                      onChange={(e) => updateVariantStock(selectedVariantColor, size, parseInt(e.target.value) || 0)}
+                                      className="w-16 h-7 text-xs text-center"
+                                      placeholder="الكمية"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Shoe Sizes */}
+                          <div className="space-y-2">
+                            <Label className="text-xs text-muted-foreground">مقاسات الأحذية</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {SHOE_SIZES.map((size) => (
+                                <div key={size} className="flex flex-col items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleVariantSize(selectedVariantColor, size, 'shoe')}
+                                    className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                                      isVariantSelected(selectedVariantColor, size)
+                                        ? "bg-gold text-black border-gold"
+                                        : "border-border hover:border-gold/50"
+                                    }`}
+                                  >
+                                    {size}
+                                  </button>
+                                  {isVariantSelected(selectedVariantColor, size) && (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={getVariantStock(selectedVariantColor, size)}
+                                      onChange={(e) => updateVariantStock(selectedVariantColor, size, parseInt(e.target.value) || 0)}
+                                      className="w-16 h-7 text-xs text-center"
+                                      placeholder="الكمية"
+                                    />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Simple Sizes (when not using variants) */}
+              {!useVariants && (
+                <>
+                  {/* Clothing Sizes */}
+                  <div className="space-y-2">
+                    <Label>مقاسات الملابس</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {CLOTHING_SIZES.map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            sizes: prev.sizes.includes(size)
+                              ? prev.sizes.filter(s => s !== size)
+                              : [...prev.sizes, size]
+                          }))}
+                          className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                            formData.sizes.includes(size)
+                              ? "bg-gold text-black border-gold"
+                              : "border-border hover:border-gold/50"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Shoe Sizes */}
+                  <div className="space-y-2">
+                    <Label>مقاسات الأحذية</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {SHOE_SIZES.map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            shoe_sizes: prev.shoe_sizes.includes(size)
+                              ? prev.shoe_sizes.filter(s => s !== size)
+                              : [...prev.shoe_sizes, size]
+                          }))}
+                          className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                            formData.shoe_sizes.includes(size)
+                              ? "bg-gold text-black border-gold"
+                              : "border-border hover:border-gold/50"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stock Input */}
+                  <div className="space-y-2">
+                    <Label>الكمية المتوفرة في المخزن</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="اتركه فارغاً إذا كانت الكمية غير محدودة"
+                      value={formData.stock}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, stock: e.target.value }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">عند نفاد الكمية سيظهر للزبون "نفذت الكمية"</p>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <Label>صور المنتج</Label>

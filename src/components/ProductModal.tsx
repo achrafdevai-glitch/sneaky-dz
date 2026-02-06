@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
+import { useProductVariants } from "@/hooks/useProductVariants";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +21,20 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
+  
+  const { data: variants } = useProductVariants(product?.id || null);
 
   if (!product) return null;
 
   const images = product.images || [];
   const hasVideo = !!product.video_url;
-  const isOutOfStock = product.stock !== null && product.stock <= 0;
+  
+  // Check stock: if using variants, check if any variant has stock; otherwise use product.stock
+  const hasVariants = variants && variants.length > 0;
+  const totalVariantStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
+  const isOutOfStock = hasVariants 
+    ? totalVariantStock === 0 
+    : (product.stock !== null && product.stock <= 0);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
