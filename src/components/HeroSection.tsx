@@ -133,12 +133,12 @@ const HeroSection = () => {
             {/* Glow Effect */}
             <div className="absolute -inset-4 rounded-full bg-white/10 blur-2xl" />
             
-            {/* Circular Logo Container */}
-            <div className="relative w-40 h-40 md:w-52 md:h-52 lg:w-60 lg:h-60 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-700 border-2 border-white/20 shadow-2xl">
+            {/* Circular Logo Container - Black part only */}
+            <div className="relative w-40 h-40 md:w-52 md:h-52 lg:w-60 lg:h-60 rounded-full overflow-hidden group-hover:scale-105 transition-transform duration-700 shadow-2xl bg-transparent">
               <img
                 src={logo}
                 alt="Sneaky Shop Logo"
-                className="w-full h-full object-cover drop-shadow-2xl"
+                className="w-full h-full object-cover drop-shadow-2xl mix-blend-multiply dark:mix-blend-screen dark:invert"
               />
             </div>
           </div>

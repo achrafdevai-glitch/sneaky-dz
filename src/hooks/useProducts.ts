@@ -15,6 +15,7 @@ export interface Product {
   notes: string | null;
   show_notes: boolean;
   show_quantity: boolean;
+  stock: number | null;
   created_at: string;
   updated_at: string;
 }
