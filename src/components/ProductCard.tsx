@@ -16,12 +16,12 @@ const ProductCard = ({ product, onSelect, index = 0 }: ProductCardProps) => {
   
   const discount = Math.round(((product.old_price - product.new_price) / product.old_price) * 100);
   
-  // Check stock: if using variants, check if any variant has stock; otherwise use product.stock
+  // Check stock: if using variants, check variant stock; if show_quantity enabled, check product.stock
   const hasVariants = variants && variants.length > 0;
   const totalVariantStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
   const isOutOfStock = hasVariants 
     ? totalVariantStock === 0 
-    : (product.stock !== null && product.stock <= 0);
+    : (product.show_quantity && product.stock !== null && product.stock <= 0);
 
   return (
     <motion.div
