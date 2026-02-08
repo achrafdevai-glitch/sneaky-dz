@@ -10,6 +10,7 @@ import {
   LogOut,
   Home,
   Layers,
+  Truck,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -29,6 +30,7 @@ const Dashboard = () => {
     { path: "/dashboard/orders", icon: ShoppingCart, label: "الطلبات" },
     { path: "/dashboard/products", icon: Package, label: "المنتجات" },
     { path: "/dashboard/categories", icon: Layers, label: "الأصناف" },
+    { path: "/dashboard/delivery", icon: Truck, label: "التوصيل" },
     { path: "/dashboard/stats", icon: BarChart3, label: "الإحصائيات" },
     { path: "/dashboard/settings", icon: Settings, label: "الإعدادات" },
   ];
