@@ -525,106 +525,83 @@ const ProductsPage = () => {
 
                   {useVariants && (
                     <div className="space-y-4 pt-3 border-t border-gold/20">
-                      {/* Color Tabs */}
-                      <div className="flex flex-wrap gap-2">
-                        {formData.colors.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            onClick={() => setSelectedVariantColor(color)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                              selectedVariantColor === color
-                                ? "border-gold bg-gold/20"
-                                : "border-border hover:border-gold/50"
-                            }`}
-                          >
-                            <div
-                              className="w-4 h-4 rounded-full border"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="text-sm">
-                              {variants.filter(v => v.color === color).length} مقاس
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                      {formData.colors.map((color) => {
+                        const colorVariants = variants.filter(v => v.color === color);
+                        return (
+                          <div key={color} className="p-3 rounded-lg bg-secondary/50 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full border-2 border-gold/50" style={{ backgroundColor: color }} />
+                              <span className="font-semibold text-sm">
+                                {colorVariants.length} مقاس متوفر
+                              </span>
+                            </div>
 
-                      {/* Sizes for selected color */}
-                      {selectedVariantColor && (
-                        <div className="space-y-3 p-3 rounded-lg bg-secondary/50">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div
-                              className="w-5 h-5 rounded-full border"
-                              style={{ backgroundColor: selectedVariantColor }}
-                            />
-                            <span className="font-medium">اختر المقاسات المتوفرة لهذا اللون</span>
-                          </div>
+                            {/* Clothing Sizes */}
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">مقاسات الملابس</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {CLOTHING_SIZES.map((size) => (
+                                  <div key={size} className="flex flex-col items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleVariantSize(color, size, 'clothing')}
+                                      className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                                        isVariantSelected(color, size)
+                                          ? "bg-gold text-black border-gold"
+                                          : "border-border hover:border-gold/50"
+                                      }`}
+                                    >
+                                      {size}
+                                    </button>
+                                    {isVariantSelected(color, size) && (
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={getVariantStock(color, size)}
+                                        onChange={(e) => updateVariantStock(color, size, parseInt(e.target.value) || 0)}
+                                        className="w-16 h-7 text-xs text-center"
+                                        placeholder="الكمية"
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
 
-                          {/* Clothing Sizes */}
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">مقاسات الملابس</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {CLOTHING_SIZES.map((size) => (
-                                <div key={size} className="flex flex-col items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleVariantSize(selectedVariantColor, size, 'clothing')}
-                                    className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
-                                      isVariantSelected(selectedVariantColor, size)
-                                        ? "bg-gold text-black border-gold"
-                                        : "border-border hover:border-gold/50"
-                                    }`}
-                                  >
-                                    {size}
-                                  </button>
-                                  {isVariantSelected(selectedVariantColor, size) && (
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={getVariantStock(selectedVariantColor, size)}
-                                      onChange={(e) => updateVariantStock(selectedVariantColor, size, parseInt(e.target.value) || 0)}
-                                      className="w-16 h-7 text-xs text-center"
-                                      placeholder="الكمية"
-                                    />
-                                  )}
-                                </div>
-                              ))}
+                            {/* Shoe Sizes */}
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">مقاسات الأحذية</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {SHOE_SIZES.map((size) => (
+                                  <div key={size} className="flex flex-col items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleVariantSize(color, size, 'shoe')}
+                                      className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
+                                        isVariantSelected(color, size)
+                                          ? "bg-gold text-black border-gold"
+                                          : "border-border hover:border-gold/50"
+                                      }`}
+                                    >
+                                      {size}
+                                    </button>
+                                    {isVariantSelected(color, size) && (
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={getVariantStock(color, size)}
+                                        onChange={(e) => updateVariantStock(color, size, parseInt(e.target.value) || 0)}
+                                        className="w-16 h-7 text-xs text-center"
+                                        placeholder="الكمية"
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-
-                          {/* Shoe Sizes */}
-                          <div className="space-y-2">
-                            <Label className="text-xs text-muted-foreground">مقاسات الأحذية</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {SHOE_SIZES.map((size) => (
-                                <div key={size} className="flex flex-col items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleVariantSize(selectedVariantColor, size, 'shoe')}
-                                    className={`px-3 py-1.5 rounded-lg border-2 transition-all text-sm ${
-                                      isVariantSelected(selectedVariantColor, size)
-                                        ? "bg-gold text-black border-gold"
-                                        : "border-border hover:border-gold/50"
-                                    }`}
-                                  >
-                                    {size}
-                                  </button>
-                                  {isVariantSelected(selectedVariantColor, size) && (
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={getVariantStock(selectedVariantColor, size)}
-                                      onChange={(e) => updateVariantStock(selectedVariantColor, size, parseInt(e.target.value) || 0)}
-                                      className="w-16 h-7 text-xs text-center"
-                                      placeholder="الكمية"
-                                    />
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -633,7 +610,6 @@ const ProductsPage = () => {
               {/* Simple Sizes (when not using variants) */}
               {!useVariants && (
                 <>
-                  {/* Clothing Sizes */}
                   <div className="space-y-2">
                     <Label>مقاسات الملابس</Label>
                     <div className="flex flex-wrap gap-2">
@@ -659,7 +635,6 @@ const ProductsPage = () => {
                     </div>
                   </div>
 
-                  {/* Shoe Sizes */}
                   <div className="space-y-2">
                     <Label>مقاسات الأحذية</Label>
                     <div className="flex flex-wrap gap-2">
@@ -685,7 +660,6 @@ const ProductsPage = () => {
                     </div>
                   </div>
 
-                  {/* Stock Input */}
                   <div className="space-y-2">
                     <Label>الكمية المتوفرة في المخزن</Label>
                     <Input
