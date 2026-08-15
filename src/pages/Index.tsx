@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import StoreFaqSection from "@/components/StoreFaqSection";
 import PageTransition from "@/components/PageTransition";
 import { Instagram, Facebook } from "lucide-react";
 
