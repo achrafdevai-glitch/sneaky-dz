@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import logo from "@/assets/logo.png";
+import logoAsset from "@/assets/sneaky-logo.jpeg.asset.json";
+
+const logo = logoAsset.url;
 
 const HeroSection = () => {
   const { data: settings } = useSettings();
@@ -138,7 +140,7 @@ const HeroSection = () => {
               <img
                 src={logo}
                 alt="Sneaky Shop Logo"
-                className="w-full h-full object-cover drop-shadow-2xl mix-blend-multiply dark:mix-blend-screen dark:invert"
+                className="w-full h-full object-cover drop-shadow-2xl"
               />
             </div>
           </div>

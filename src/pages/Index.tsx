@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import StoreFaqSection from "@/components/StoreFaqSection";
 import PageTransition from "@/components/PageTransition";
 import { Instagram, Facebook } from "lucide-react";
 
@@ -14,7 +15,7 @@ const Index = () => {
   const socialLinks = {
     facebook: "https://www.facebook.com/profile.php?id=61587324234197",
     tiktok: "https://www.tiktok.com/@sneaky_.shop",
-    instagram: "https://www.instagram.com/sneaky_.shop/",
+    instagram: "https://www.instagram.com/sneaky_.dz/",
   };
 
   return (
@@ -22,6 +23,7 @@ const Index = () => {
       <main className="min-h-screen transition-theme overflow-hidden bg-background">
         <HeroSection />
         <CategoriesSection />
+        <StoreFaqSection />
         
         {/* Footer */}
         <motion.footer 
@@ -36,6 +38,7 @@ const Index = () => {
             <div className="flex items-center justify-center gap-6 mb-8">
               <motion.a
                 href={socialLinks.facebook}
+                aria-label="فيسبوك Sneaky Shop"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, y: -3 }}
@@ -47,6 +50,7 @@ const Index = () => {
               
               <motion.a
                 href={socialLinks.instagram}
+                aria-label="إنستغرام Sneaky Shop"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, y: -3 }}
@@ -58,6 +62,7 @@ const Index = () => {
               
               <motion.a
                 href={socialLinks.tiktok}
+                aria-label="تيك توك Sneaky Shop"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.2, y: -3 }}
