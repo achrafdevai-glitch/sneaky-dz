@@ -20,6 +20,7 @@ export interface Order {
   notes: string | null;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   created_at: string;
+  confirmed_at: string | null;
   updated_at: string;
 }
 
@@ -42,7 +43,7 @@ export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (order: Omit<Order, "id" | "status" | "created_at" | "updated_at">) => {
+    mutationFn: async (order: Omit<Order, "id" | "status" | "created_at" | "updated_at" | "confirmed_at">) => {
       const { data, error } = await supabase
         .from("orders")
         .insert({ ...order, status: "pending" })

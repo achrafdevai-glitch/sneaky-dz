@@ -9,8 +9,8 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 // Note: In production, use proper server-side authentication
-const ADMIN_USERNAME = "Achreef2004";
-const ADMIN_PASSWORD = "Achreef200@";
+const ADMIN_USERNAME = "Sami2007";
+const ADMIN_PASSWORD = "Sami2007@.";
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(() => {

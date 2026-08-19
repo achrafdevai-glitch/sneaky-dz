@@ -3,6 +3,8 @@ import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import StoreFaqSection from "@/components/StoreFaqSection";
 import PageTransition from "@/components/PageTransition";
+import CartButton from "@/components/CartButton";
+import CartDrawer from "@/components/CartDrawer";
 import { Instagram, Facebook } from "lucide-react";
 
 const TikTokIcon = () => (
@@ -24,7 +26,9 @@ const Index = () => {
         <HeroSection />
         <CategoriesSection />
         <StoreFaqSection />
-        
+        <CartButton />
+        <CartDrawer />
+
         {/* Footer */}
         <motion.footer 
           initial={{ opacity: 0 }}

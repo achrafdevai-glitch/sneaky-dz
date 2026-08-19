@@ -17,9 +17,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Trash2, Eye, Printer, Package, User, Phone, MapPin, Truck, Calendar, Palette, Ruler } from "lucide-react";
+import { Trash2, Eye, Printer, Package, User, Phone, MapPin, Truck, Calendar, Palette, Ruler, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+
+const formatDelay = (from: string, to: string) => {
+  const minutes = Math.max(0, Math.round((new Date(to).getTime() - new Date(from).getTime()) / 60000));
+  if (minutes < 60) return `خلال ${minutes} د`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `خلال ${hours} سا`;
+  return `خلال ${Math.floor(hours / 24)} يوم`;
+};
 
 const statusLabels: Record<Order["status"], string> = {
   pending: "قيد الانتظار",
@@ -161,10 +169,21 @@ const OrdersPage = () => {
                     <span className="text-xl font-bold text-white">
                       {order.total_price.toLocaleString()} د.ج
                     </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(order.created_at), "dd MMM yyyy", { locale: ar })}
-                    </span>
+                    <div className="text-xs text-muted-foreground text-left space-y-0.5">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        الطلب: {format(new Date(order.created_at), "dd MMM yyyy - HH:mm", { locale: ar })}
+                      </span>
+                      {order.confirmed_at && (
+                        <span className="flex items-center gap-1 text-green-500">
+                          <CheckCircle2 className="w-3 h-3" />
+                          التأكيد: {format(new Date(order.confirmed_at), "dd MMM yyyy - HH:mm", { locale: ar })}
+                          <span className="text-muted-foreground">
+                            ({formatDelay(order.created_at, order.confirmed_at)})
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Actions */}
