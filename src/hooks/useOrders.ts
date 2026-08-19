@@ -43,7 +43,7 @@ export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (order: Omit<Order, "id" | "status" | "created_at" | "updated_at">) => {
+    mutationFn: async (order: Omit<Order, "id" | "status" | "created_at" | "updated_at" | "confirmed_at">) => {
       const { data, error } = await supabase
         .from("orders")
         .insert({ ...order, status: "pending" })
