@@ -16,7 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const logo = "/logo.jpeg";
+import logoAsset from "@/assets/sneaky-logo-mark.jpg.asset.json";
+
+const logo = logoAsset.url;
 
 const HeroSection = () => {
   const { data: settings } = useSettings();
