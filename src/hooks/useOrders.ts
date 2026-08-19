@@ -20,6 +20,7 @@ export interface Order {
   notes: string | null;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   created_at: string;
+  confirmed_at: string | null;
   updated_at: string;
 }
 

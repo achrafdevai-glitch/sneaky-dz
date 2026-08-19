@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { CartProvider } from "@/contexts/CartContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import OrdersPage from "./pages/dashboard/OrdersPage";
@@ -21,25 +22,27 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AdminProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<Dashboard />}>
-                <Route index element={<Navigate to="/dashboard/orders" replace />} />
-                <Route path="orders" element={<OrdersPage />} />
-                <Route path="products" element={<ProductsPage />} />
-                <Route path="categories" element={<CategoriesPage />} />
-                <Route path="delivery" element={<DeliveryPricesPage />} />
-                <Route path="stats" element={<StatsPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />}>
+                  <Route index element={<Navigate to="/dashboard/orders" replace />} />
+                  <Route path="orders" element={<OrdersPage />} />
+                  <Route path="products" element={<ProductsPage />} />
+                  <Route path="categories" element={<CategoriesPage />} />
+                  <Route path="delivery" element={<DeliveryPricesPage />} />
+                  <Route path="stats" element={<StatsPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </CartProvider>
       </AdminProvider>
     </ThemeProvider>
   </QueryClientProvider>
