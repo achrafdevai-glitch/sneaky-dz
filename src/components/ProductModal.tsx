@@ -2,6 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
 import { useProductVariants } from "@/hooks/useProductVariants";
+import { useSettings } from "@/hooks/useSettings";
+import { useCart } from "@/contexts/CartContext";
+import VariantPicker, { VariantSelection } from "./VariantPicker";
+import ProductReviews from "./ProductReviews";
+import ProductFaqSection from "./ProductFaqSection";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag, XCircle, Plus, Minus, ShoppingCart } from "lucide-react";
 import OrderForm from "./OrderForm";
+
 
 interface ProductModalProps {
   product: Product | null;
@@ -21,20 +28,75 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
-  
+  const [selection, setSelection] = useState<VariantSelection>({ color: null, size: null, shoeSize: null });
+  const [quantity, setQuantity] = useState(1);
+
   const { data: variants } = useProductVariants(product?.id || null);
+  const { data: settings } = useSettings();
+  const { addItem, openCart } = useCart();
 
   if (!product) return null;
 
+  const reviewsEnabled = settings?.reviews_enabled !== "false";
   const images = product.images || [];
   const hasVideo = !!product.video_url;
-  
+
   // Check stock: if using variants, check variant stock; if show_quantity enabled, check product.stock
-  const hasVariants = variants && variants.length > 0;
-  const totalVariantStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
+  const hasVariants = !!variants && variants.length > 0;
+  const totalVariantStock = hasVariants ? variants!.reduce((sum, v) => sum + v.stock, 0) : null;
   const isOutOfStock = hasVariants 
     ? totalVariantStock === 0 
     : (product.show_quantity && product.stock !== null && product.stock <= 0);
+
+  const chosenSize = selection.size || selection.shoeSize;
+  const currentVariant = hasVariants && selection.color && chosenSize
+    ? variants!.find((v) => v.color === selection.color && v.size === chosenSize)
+    : undefined;
+  const maxStock = hasVariants
+    ? (currentVariant ? currentVariant.stock : null)
+    : (product.stock ?? null);
+
+  const needsColor = (product.colors || []).length > 0;
+  const needsSize = hasVariants
+    ? true
+    : ((product.sizes || []).length > 0 || (product.shoe_sizes || []).length > 0);
+
+  const selectionComplete =
+    (!needsColor || !!selection.color) && (!needsSize || !!chosenSize);
+
+  const handleAddToCart = () => {
+    if (!selectionComplete) {
+      toast.error("يرجى اختيار اللون والمقاس أولاً");
+      return;
+    }
+    if (maxStock !== null && maxStock <= 0) {
+      toast.error("نفذت الكمية لهذا الخيار");
+      return;
+    }
+    addItem({
+      productId: product.id,
+      name: product.name,
+      image: images[0] || null,
+      unitPrice: product.new_price,
+      quantity,
+      color: selection.color,
+      size: selection.size,
+      shoeSize: selection.shoeSize,
+      maxStock,
+    });
+    toast.success("تمت الإضافة إلى السلة");
+    onClose();
+    setTimeout(() => openCart(), 200);
+  };
+
+  const handleDirectOrder = () => {
+    if (!selectionComplete) {
+      toast.error("يرجى اختيار اللون والمقاس أولاً");
+      return;
+    }
+    setShowOrderForm(true);
+  };
+
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -71,12 +133,15 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
               </DialogHeader>
               <OrderForm
                 product={product}
+                initialSelection={selection}
+                initialQuantity={quantity}
                 onSuccess={() => {
                   setShowOrderForm(false);
                   onClose();
                 }}
                 onCancel={() => setShowOrderForm(false)}
               />
+
             </motion.div>
           ) : (
             <motion.div
@@ -293,39 +358,98 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
                   </motion.div>
                 )}
 
-                {/* Order Button - Premium */}
-                <motion.div
-                  whileHover={{ scale: isOutOfStock ? 1 : 1.02 }}
-                  whileTap={{ scale: isOutOfStock ? 1 : 0.98 }}
-                >
+                {/* Variant picker */}
+                {!isOutOfStock && (
+                  <VariantPicker
+                    product={product}
+                    variants={variants}
+                    selection={selection}
+                    onChange={(s) => {
+                      setSelection(s);
+                      setQuantity(1);
+                    }}
+                  />
+                )}
+
+                {/* Quantity */}
+                {!isOutOfStock && (
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/40 border border-border/50">
+                    <span className="text-sm font-medium">الكمية</span>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full w-9 h-9"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="w-8 text-center font-bold">{quantity}</span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full w-9 h-9"
+                        disabled={maxStock !== null && quantity >= maxStock}
+                        onClick={() => setQuantity((q) => (maxStock !== null ? Math.min(maxStock, q + 1) : q + 1))}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {maxStock !== null && maxStock > 0 && maxStock <= 5 && (
+                  <p className="text-sm text-destructive text-center">تبقى {maxStock} قطع فقط</p>
+                )}
+
+                {/* Actions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     size="lg"
-                    className={`w-full text-lg py-7 rounded-2xl font-medium relative overflow-hidden group ${
+                    variant="outline"
+                    className="w-full py-6 rounded-2xl border-gold/40 hover:border-gold"
+                    onClick={handleAddToCart}
+                    disabled={isOutOfStock}
+                  >
+                    <ShoppingCart className="w-5 h-5 ml-2 text-gold" />
+                    أضف للسلة
+                  </Button>
+
+                  <Button
+                    size="lg"
+                    className={`w-full py-6 rounded-2xl font-medium relative overflow-hidden group ${
                       isOutOfStock
                         ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                        : 'bg-gradient-to-r from-gold via-gold-light to-gold hover:from-primary hover:to-primary text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-500'
+                        : 'bg-gradient-to-r from-gold via-gold-light to-gold hover:from-primary hover:to-primary text-primary-foreground shadow-xl'
                     }`}
-                    onClick={() => !isOutOfStock && setShowOrderForm(true)}
+                    onClick={handleDirectOrder}
                     disabled={isOutOfStock}
                   >
                     {isOutOfStock ? (
                       <>
-                        <XCircle className="w-6 h-6 ml-3" />
+                        <XCircle className="w-5 h-5 ml-2" />
                         <span>نفذت الكمية</span>
                       </>
                     ) : (
                       <>
-                        {/* Shine effect */}
                         <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-                        
-                        <ShoppingBag className="w-6 h-6 ml-3 group-hover:rotate-12 transition-transform" />
-                        <span className="relative">اطلب الآن</span>
-                        <Sparkles className="w-5 h-5 mr-3 opacity-70" />
+                        <ShoppingBag className="w-5 h-5 ml-2" />
+                        <span className="relative">اطلب مباشرة</span>
+                        <Sparkles className="w-4 h-4 mr-2 opacity-70" />
                       </>
                     )}
                   </Button>
-                </motion.div>
+                </div>
+
+                {/* FAQ */}
+                <ProductFaqSection productId={product.id} />
+
+                {/* Reviews */}
+                {reviewsEnabled && <ProductReviews productId={product.id} />}
               </div>
+
             </motion.div>
           )}
         </AnimatePresence>

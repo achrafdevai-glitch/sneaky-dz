@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,13 +46,16 @@ interface OrderFormProps {
   };
   onSuccess: () => void;
   onCancel: () => void;
+  initialSelection?: { color: string | null; size: string | null; shoeSize: string | null };
+  initialQuantity?: number;
 }
 
-const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
+const OrderForm = ({ product, onSuccess, onCancel, initialSelection, initialQuantity }: OrderFormProps) => {
   const [isSuccess, setIsSuccess] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(Math.max(1, initialQuantity || 1));
   const createOrder = useCreateOrder();
   const { data: deliveryPrices } = useDeliveryPrices();
+
   const { data: variants } = useProductVariants(product.id);
   const [deliveryPrice, setDeliveryPrice] = useState(0);
 
@@ -68,9 +71,14 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
     resolver: zodResolver(orderSchema),
     defaultValues: {
       deliveryType: "home",
-      quantity: 1,
+      quantity: Math.max(1, initialQuantity || 1),
+      selectedColor: initialSelection?.color || undefined,
+      selectedSize: initialSelection?.size || undefined,
+      selectedShoeSize: initialSelection?.shoeSize || undefined,
     },
   });
+  const skipFirstColorClear = useRef(!!initialSelection?.color);
+
 
   const selectedWilaya = watch("wilaya");
   const selectedDeliveryType = watch("deliveryType");
@@ -121,6 +129,10 @@ const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
 
   // Clear size when color changes
   useEffect(() => {
+    if (skipFirstColorClear.current) {
+      skipFirstColorClear.current = false;
+      return;
+    }
     if (hasVariants && selectedColor) {
       setValue("selectedSize", "");
       setValue("selectedShoeSize", "");
