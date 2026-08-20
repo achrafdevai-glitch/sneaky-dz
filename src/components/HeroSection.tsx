@@ -16,9 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import logoAsset from "@/assets/sneaky-logo-mark.jpg.asset.json";
-
-const logo = logoAsset.url;
+const logo = "/logo.png";
 
 const HeroSection = () => {
   const { data: settings } = useSettings();
@@ -35,7 +33,6 @@ const HeroSection = () => {
 
   const heroVideo = settings?.hero_video || "/videos/hero-video.mp4";
 
-  // Smooth video transition when source changes
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.style.opacity = "0";
@@ -46,9 +43,7 @@ const HeroSection = () => {
 
           videoRef.current
             .play()
-            .catch(() => {
-              // Autoplay may be blocked by the browser.
-            });
+            .catch(() => {});
 
           videoRef.current.style.opacity = "1";
         }
@@ -83,7 +78,6 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen overflow-hidden">
-      {/* Video Background with smooth transition */}
       <video
         ref={videoRef}
         autoPlay
@@ -96,11 +90,9 @@ const HeroSection = () => {
         <source src={heroVideo} type="video/mp4" />
       </video>
 
-      {/* Gradient Overlays */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
 
-      {/* Animated Particles Effect */}
       <div className="absolute inset-0 opacity-40">
         <motion.div
           animate={{ y: [-20, 20], opacity: [0.3, 0.8, 0.3] }}
@@ -135,7 +127,6 @@ const HeroSection = () => {
         />
       </div>
 
-      {/* Theme Toggle */}
       <Button
         variant="ghost"
         size="icon"
@@ -149,36 +140,31 @@ const HeroSection = () => {
         )}
       </Button>
 
-      {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-        {/* Floating Circular Logo */}
         <motion.div
-          className="cursor-pointer group"
-          onClick={handleLogoClick}
-          animate={{ y: [-5, 5, -5] }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        >
-          <div className="relative">
-            {/* Glow Effect */}
-            <div className="absolute -inset-4 rounded-full bg-white/10 blur-2xl" />
+  className="cursor-pointer group"
+  onClick={handleLogoClick}
+  animate={{ y: [-5, 5, -5] }}
+  transition={{
+    duration: 4,
+    repeat: Infinity,
+    ease: "easeInOut",
+  }}
+>
+  <div className="relative">
+    <div className="absolute -inset-6 rounded-full bg-white/10 blur-2xl" />
 
-            {/* Logo */}
-            <div className="relative w-64 md:w-80 lg:w-96 group-hover:scale-105 transition-transform duration-700">
-              <img
-                src={logo}
-                alt="Sneaky Shop Logo"
-                loading="eager"
-                className="w-full h-auto object-contain drop-shadow-2xl mix-blend-screen"
-              />
-            </div>
-          </div>
-        </motion.div>
+    <div className="relative w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 group-hover:scale-105 transition-transform duration-700 rounded-full overflow-hidden">
+      <img
+        src={logo}
+        alt="Sneaky Shop Logo"
+        loading="eager"
+        className="w-full h-full object-cover rounded-full drop-shadow-2xl"
+      />
+    </div>
+  </div>
+</motion.div>
 
-        {/* Tagline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -189,14 +175,12 @@ const HeroSection = () => {
             Dress Than Differently
           </p>
 
-          {/* Decorative Line */}
           <div className="mt-6 mx-auto w-40 md:w-56">
             <div className="h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           </div>
         </motion.div>
       </div>
 
-      {/* Login Dialog */}
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <DialogContent
           className="sm:max-w-md glass border-white/20"
