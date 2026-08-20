@@ -28,20 +28,75 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
   const [showOrderForm, setShowOrderForm] = useState(false);
-  
+  const [selection, setSelection] = useState<VariantSelection>({ color: null, size: null, shoeSize: null });
+  const [quantity, setQuantity] = useState(1);
+
   const { data: variants } = useProductVariants(product?.id || null);
+  const { data: settings } = useSettings();
+  const { addItem, openCart } = useCart();
 
   if (!product) return null;
 
+  const reviewsEnabled = settings?.reviews_enabled !== "false";
   const images = product.images || [];
   const hasVideo = !!product.video_url;
-  
+
   // Check stock: if using variants, check variant stock; if show_quantity enabled, check product.stock
-  const hasVariants = variants && variants.length > 0;
-  const totalVariantStock = hasVariants ? variants.reduce((sum, v) => sum + v.stock, 0) : null;
+  const hasVariants = !!variants && variants.length > 0;
+  const totalVariantStock = hasVariants ? variants!.reduce((sum, v) => sum + v.stock, 0) : null;
   const isOutOfStock = hasVariants 
     ? totalVariantStock === 0 
     : (product.show_quantity && product.stock !== null && product.stock <= 0);
+
+  const chosenSize = selection.size || selection.shoeSize;
+  const currentVariant = hasVariants && selection.color && chosenSize
+    ? variants!.find((v) => v.color === selection.color && v.size === chosenSize)
+    : undefined;
+  const maxStock = hasVariants
+    ? (currentVariant ? currentVariant.stock : null)
+    : (product.stock ?? null);
+
+  const needsColor = (product.colors || []).length > 0;
+  const needsSize = hasVariants
+    ? true
+    : ((product.sizes || []).length > 0 || (product.shoe_sizes || []).length > 0);
+
+  const selectionComplete =
+    (!needsColor || !!selection.color) && (!needsSize || !!chosenSize);
+
+  const handleAddToCart = () => {
+    if (!selectionComplete) {
+      toast.error("يرجى اختيار اللون والمقاس أولاً");
+      return;
+    }
+    if (maxStock !== null && maxStock <= 0) {
+      toast.error("نفذت الكمية لهذا الخيار");
+      return;
+    }
+    addItem({
+      productId: product.id,
+      name: product.name,
+      image: images[0] || null,
+      unitPrice: product.new_price,
+      quantity,
+      color: selection.color,
+      size: selection.size,
+      shoeSize: selection.shoeSize,
+      maxStock,
+    });
+    toast.success("تمت الإضافة إلى السلة");
+    onClose();
+    setTimeout(() => openCart(), 200);
+  };
+
+  const handleDirectOrder = () => {
+    if (!selectionComplete) {
+      toast.error("يرجى اختيار اللون والمقاس أولاً");
+      return;
+    }
+    setShowOrderForm(true);
+  };
+
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
