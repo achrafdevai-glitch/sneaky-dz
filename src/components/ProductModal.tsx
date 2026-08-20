@@ -2,6 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Product } from "@/hooks/useProducts";
 import { useProductVariants } from "@/hooks/useProductVariants";
+import { useSettings } from "@/hooks/useSettings";
+import { useCart } from "@/contexts/CartContext";
+import VariantPicker, { VariantSelection } from "./VariantPicker";
+import ProductReviews from "./ProductReviews";
+import ProductFaqSection from "./ProductFaqSection";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, Sparkles, ShoppingBag, TrendingDown, Tag, XCircle, Plus, Minus, ShoppingCart } from "lucide-react";
 import OrderForm from "./OrderForm";
+
 
 interface ProductModalProps {
   product: Product | null;
