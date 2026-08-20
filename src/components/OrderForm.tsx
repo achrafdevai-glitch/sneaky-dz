@@ -71,9 +71,14 @@ const OrderForm = ({ product, onSuccess, onCancel, initialSelection, initialQuan
     resolver: zodResolver(orderSchema),
     defaultValues: {
       deliveryType: "home",
-      quantity: 1,
+      quantity: Math.max(1, initialQuantity || 1),
+      selectedColor: initialSelection?.color || undefined,
+      selectedSize: initialSelection?.size || undefined,
+      selectedShoeSize: initialSelection?.shoeSize || undefined,
     },
   });
+  const skipFirstColorClear = useRef(!!initialSelection?.color);
+
 
   const selectedWilaya = watch("wilaya");
   const selectedDeliveryType = watch("deliveryType");
