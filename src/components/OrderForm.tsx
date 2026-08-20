@@ -46,13 +46,16 @@ interface OrderFormProps {
   };
   onSuccess: () => void;
   onCancel: () => void;
+  initialSelection?: { color: string | null; size: string | null; shoeSize: string | null };
+  initialQuantity?: number;
 }
 
-const OrderForm = ({ product, onSuccess, onCancel }: OrderFormProps) => {
+const OrderForm = ({ product, onSuccess, onCancel, initialSelection, initialQuantity }: OrderFormProps) => {
   const [isSuccess, setIsSuccess] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(Math.max(1, initialQuantity || 1));
   const createOrder = useCreateOrder();
   const { data: deliveryPrices } = useDeliveryPrices();
+
   const { data: variants } = useProductVariants(product.id);
   const [deliveryPrice, setDeliveryPrice] = useState(0);
 
