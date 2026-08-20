@@ -133,12 +133,15 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
               </DialogHeader>
               <OrderForm
                 product={product}
+                initialSelection={selection}
+                initialQuantity={quantity}
                 onSuccess={() => {
                   setShowOrderForm(false);
                   onClose();
                 }}
                 onCancel={() => setShowOrderForm(false)}
               />
+
             </motion.div>
           ) : (
             <motion.div
