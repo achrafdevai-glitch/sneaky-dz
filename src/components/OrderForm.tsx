@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -129,6 +129,10 @@ const OrderForm = ({ product, onSuccess, onCancel, initialSelection, initialQuan
 
   // Clear size when color changes
   useEffect(() => {
+    if (skipFirstColorClear.current) {
+      skipFirstColorClear.current = false;
+      return;
+    }
     if (hasVariants && selectedColor) {
       setValue("selectedSize", "");
       setValue("selectedShoeSize", "");
