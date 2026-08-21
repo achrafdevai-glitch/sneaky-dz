@@ -696,7 +696,7 @@ const ProductsPage = () => {
               )}
 
               <div className="space-y-2">
-                <Label>صور المنتج</Label>
+                <Label>صور المنتج ({formData.images.length}/{MAX_IMAGES})</Label>
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -709,15 +709,18 @@ const ProductsPage = () => {
                   type="button"
                   variant="outline"
                   onClick={() => imageInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={isUploading || formData.images.length >= MAX_IMAGES}
                 >
                   {isUploading ? (
                     <Loader2 className="h-4 w-4 ml-2 animate-spin" />
                   ) : (
                     <Upload className="h-4 w-4 ml-2" />
                   )}
-                  رفع صور
+                  {formData.images.length >= MAX_IMAGES ? "بلغت الحد الأقصى" : "رفع صور"}
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  حد أقصى صورتان لكل منتج. احذف صورة لاستبدالها.
+                </p>
                 {formData.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {formData.images.map((url, index) => (
