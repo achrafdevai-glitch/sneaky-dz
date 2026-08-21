@@ -160,17 +160,26 @@ const ProductsPage = () => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
+
+    const remaining = MAX_IMAGES - formData.images.length;
+    if (remaining <= 0) {
+      toast.error(`الحد الأقصى ${MAX_IMAGES} صور. احذف صورة أولاً`);
+      e.target.value = "";
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      toast.info(`تم قبول ${remaining} صورة فقط (الحد الأقصى ${MAX_IMAGES})`);
+    }
 
     setIsUploading(true);
     try {
-      const uploadPromises = Array.from(files).map((file) =>
-        uploadFile(file, "images")
-      );
-      const urls = await Promise.all(uploadPromises);
+      const urls = await Promise.all(selected.map((file) => uploadFile(file, "images")));
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...urls],
+        images: [...prev.images, ...urls].slice(0, MAX_IMAGES),
       }));
       toast.success("تم رفع الصور بنجاح");
     } catch (error) {
@@ -178,6 +187,7 @@ const ProductsPage = () => {
       toast.error("حدث خطأ أثناء رفع الصور");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
