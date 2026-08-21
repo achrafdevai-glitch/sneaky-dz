@@ -32,9 +32,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package, Layers } from "lucide-react";
 import { toast } from "sonner";
+import ProductFaqManager from "@/components/ProductFaqManager";
+import ProductStockEditor from "@/components/ProductStockEditor";
 
 const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
 const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
+const MAX_IMAGES = 2;
 
 interface VariantItem {
   color: string;
@@ -157,17 +160,26 @@ const ProductsPage = () => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
+
+    const remaining = MAX_IMAGES - formData.images.length;
+    if (remaining <= 0) {
+      toast.error(`الحد الأقصى ${MAX_IMAGES} صور. احذف صورة أولاً`);
+      e.target.value = "";
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, remaining);
+    if (files.length > remaining) {
+      toast.info(`تم قبول ${remaining} صورة فقط (الحد الأقصى ${MAX_IMAGES})`);
+    }
 
     setIsUploading(true);
     try {
-      const uploadPromises = Array.from(files).map((file) =>
-        uploadFile(file, "images")
-      );
-      const urls = await Promise.all(uploadPromises);
+      const urls = await Promise.all(selected.map((file) => uploadFile(file, "images")));
       setFormData((prev) => ({
         ...prev,
-        images: [...prev.images, ...urls],
+        images: [...prev.images, ...urls].slice(0, MAX_IMAGES),
       }));
       toast.success("تم رفع الصور بنجاح");
     } catch (error) {
@@ -175,6 +187,7 @@ const ProductsPage = () => {
       toast.error("حدث خطأ أثناء رفع الصور");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -192,6 +205,7 @@ const ProductsPage = () => {
       toast.error("حدث خطأ أثناء رفع الفيديو");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -236,8 +250,9 @@ const ProductsPage = () => {
   };
 
   const updateVariantStock = (color: string, size: string, stock: number) => {
+    const safe = Math.max(0, Number.isFinite(stock) ? Math.floor(stock) : 0);
     setVariants(prev => prev.map(v => 
-      v.color === color && v.size === size ? { ...v, stock } : v
+      v.color === color && v.size === size ? { ...v, stock: safe } : v
     ));
   };
 
@@ -257,7 +272,7 @@ const ProductsPage = () => {
       name: formData.name,
       old_price: parseFloat(formData.old_price),
       new_price: parseFloat(formData.new_price),
-      images: formData.images,
+      images: formData.images.slice(0, MAX_IMAGES),
       video_url: formData.video_url || null,
       category_id: formData.category_id,
       sizes: useVariants ? [] : formData.sizes,
@@ -266,7 +281,11 @@ const ProductsPage = () => {
       notes: formData.notes || null,
       show_notes: formData.show_notes,
       show_quantity: formData.show_quantity,
-      stock: useVariants ? null : (formData.stock ? parseInt(formData.stock) : null),
+      stock: useVariants
+        ? null
+        : formData.stock !== ""
+          ? Math.max(0, parseInt(formData.stock, 10) || 0)
+          : null,
     };
 
     try {
@@ -677,7 +696,7 @@ const ProductsPage = () => {
               )}
 
               <div className="space-y-2">
-                <Label>صور المنتج</Label>
+                <Label>صور المنتج ({formData.images.length}/{MAX_IMAGES})</Label>
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -690,15 +709,18 @@ const ProductsPage = () => {
                   type="button"
                   variant="outline"
                   onClick={() => imageInputRef.current?.click()}
-                  disabled={isUploading}
+                  disabled={isUploading || formData.images.length >= MAX_IMAGES}
                 >
                   {isUploading ? (
                     <Loader2 className="h-4 w-4 ml-2 animate-spin" />
                   ) : (
                     <Upload className="h-4 w-4 ml-2" />
                   )}
-                  رفع صور
+                  {formData.images.length >= MAX_IMAGES ? "بلغت الحد الأقصى" : "رفع صور"}
                 </Button>
+                <p className="text-xs text-muted-foreground">
+                  حد أقصى صورتان لكل منتج. احذف صورة لاستبدالها.
+                </p>
                 {formData.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {formData.images.map((url, index) => (
@@ -722,7 +744,7 @@ const ProductsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>فيديو المنتج (اختياري)</Label>
+                <Label>فيديو المنتج (فيديو واحد كحد أقصى — اختياري)</Label>
                 <input
                   ref={videoInputRef}
                   type="file"
@@ -741,7 +763,7 @@ const ProductsPage = () => {
                   ) : (
                     <Upload className="h-4 w-4 ml-2" />
                   )}
-                  رفع فيديو
+                  {formData.video_url ? "استبدال الفيديو" : "رفع فيديو"}
                 </Button>
                 {formData.video_url && (
                   <div className="flex items-center gap-2 mt-2">
@@ -762,6 +784,8 @@ const ProductsPage = () => {
                   </div>
                 )}
               </div>
+
+              {editingProduct && <ProductFaqManager productId={editingProduct.id} />}
 
               <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-black" disabled={isUploading}>
                 {editingProduct ? "تحديث" : "إضافة"}
@@ -843,6 +867,7 @@ const ProductsPage = () => {
                       )}
                     </div>
                   )}
+                  <ProductStockEditor product={product} />
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
