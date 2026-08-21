@@ -867,6 +867,7 @@ const ProductsPage = () => {
                       )}
                     </div>
                   )}
+                  <ProductStockEditor product={product} />
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
