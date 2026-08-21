@@ -763,7 +763,7 @@ const ProductsPage = () => {
                   ) : (
                     <Upload className="h-4 w-4 ml-2" />
                   )}
-                  رفع فيديو
+                  {formData.video_url ? "استبدال الفيديو" : "رفع فيديو"}
                 </Button>
                 {formData.video_url && (
                   <div className="flex items-center gap-2 mt-2">
@@ -784,6 +784,8 @@ const ProductsPage = () => {
                   </div>
                 )}
               </div>
+
+              {editingProduct && <ProductFaqManager productId={editingProduct.id} />}
 
               <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-black" disabled={isUploading}>
                 {editingProduct ? "تحديث" : "إضافة"}
