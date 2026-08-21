@@ -272,7 +272,7 @@ const ProductsPage = () => {
       name: formData.name,
       old_price: parseFloat(formData.old_price),
       new_price: parseFloat(formData.new_price),
-      images: formData.images,
+      images: formData.images.slice(0, MAX_IMAGES),
       video_url: formData.video_url || null,
       category_id: formData.category_id,
       sizes: useVariants ? [] : formData.sizes,
@@ -281,7 +281,11 @@ const ProductsPage = () => {
       notes: formData.notes || null,
       show_notes: formData.show_notes,
       show_quantity: formData.show_quantity,
-      stock: useVariants ? null : (formData.stock ? parseInt(formData.stock) : null),
+      stock: useVariants
+        ? null
+        : formData.stock !== ""
+          ? Math.max(0, parseInt(formData.stock, 10) || 0)
+          : null,
     };
 
     try {
