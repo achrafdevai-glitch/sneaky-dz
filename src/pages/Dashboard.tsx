@@ -11,6 +11,7 @@ import {
   Home,
   Layers,
   Truck,
+  Star,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -31,6 +32,7 @@ const Dashboard = () => {
     { path: "/dashboard/products", icon: Package, label: "المنتجات" },
     { path: "/dashboard/categories", icon: Layers, label: "الأصناف" },
     { path: "/dashboard/delivery", icon: Truck, label: "التوصيل" },
+    { path: "/dashboard/reviews", icon: Star, label: "التقييمات" },
     { path: "/dashboard/stats", icon: BarChart3, label: "الإحصائيات" },
     { path: "/dashboard/settings", icon: Settings, label: "الإعدادات" },
   ];
