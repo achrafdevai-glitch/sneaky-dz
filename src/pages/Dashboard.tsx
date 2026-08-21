@@ -84,7 +84,7 @@ const Dashboard = () => {
 
         {/* Mobile Bottom Nav */}
         <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border/50 md:hidden z-50 safe-area-bottom">
-          <div className="flex justify-around py-2">
+          <div className="flex justify-around py-2 overflow-x-auto">
             {menuItems.map((item) => (
               <Link
                 key={item.path}

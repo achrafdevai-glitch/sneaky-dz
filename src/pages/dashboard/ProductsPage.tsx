@@ -30,11 +30,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Palette, MessageSquare, Package, Layers, Check } from "lucide-react";
 import { toast } from "sonner";
+import ProductFaqManager from "@/components/ProductFaqManager";
+import ProductStockEditor from "@/components/ProductStockEditor";
 
 const CLOTHING_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
 const SHOE_SIZES = ["38", "39", "40", "41", "42", "43", "44"];
+const MAX_IMAGES = 2;
 
 interface VariantItem {
   color: string;
