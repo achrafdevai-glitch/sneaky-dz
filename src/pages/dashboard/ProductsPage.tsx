@@ -744,7 +744,7 @@ const ProductsPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>فيديو المنتج (اختياري)</Label>
+                <Label>فيديو المنتج (فيديو واحد كحد أقصى — اختياري)</Label>
                 <input
                   ref={videoInputRef}
                   type="file"
