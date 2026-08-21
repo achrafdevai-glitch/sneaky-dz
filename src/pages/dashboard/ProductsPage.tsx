@@ -205,6 +205,7 @@ const ProductsPage = () => {
       toast.error("حدث خطأ أثناء رفع الفيديو");
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -249,8 +250,9 @@ const ProductsPage = () => {
   };
 
   const updateVariantStock = (color: string, size: string, stock: number) => {
+    const safe = Math.max(0, Number.isFinite(stock) ? Math.floor(stock) : 0);
     setVariants(prev => prev.map(v => 
-      v.color === color && v.size === size ? { ...v, stock } : v
+      v.color === color && v.size === size ? { ...v, stock: safe } : v
     ));
   };
 
